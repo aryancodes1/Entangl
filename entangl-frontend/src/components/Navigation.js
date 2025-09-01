@@ -11,6 +11,7 @@ export default function Navigation() {
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
+  const [notificationCount, setNotificationCount] = useState(0);
 
   useEffect(() => {
     const loginMethod = localStorage.getItem('loginMethod');
@@ -27,12 +28,53 @@ export default function Navigation() {
         setCurrentUser(user);
       }
     }
-  }, [session]);
+
+    // Fetch notification count
+    if (currentUser?.id || session?.user?.id) {
+      fetchNotificationCount();
+    }
+
+    // Listen for notification updates
+    const handleNotificationUpdate = () => {
+      fetchNotificationCount();
+    };
+
+    const handleNotificationsViewed = () => {
+      setNotificationCount(0);
+    };
+
+    window.addEventListener('notificationCountChanged', handleNotificationUpdate);
+    window.addEventListener('notificationsViewed', handleNotificationsViewed);
+
+    return () => {
+      window.removeEventListener('notificationCountChanged', handleNotificationUpdate);
+      window.removeEventListener('notificationsViewed', handleNotificationsViewed);
+    };
+  }, [session, currentUser?.id]);
+
+  const fetchNotificationCount = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch('http://localhost:8080/api/follows/requests', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const requests = await response.json();
+        setNotificationCount(requests.length);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+      setSearchQuery(''); // Clear after search
     }
   };
 
@@ -67,7 +109,7 @@ export default function Navigation() {
   const navItems = [
     { href: '/feed', icon: 'home', label: 'Home' },
     { href: '/explore', icon: 'explore', label: 'Explore' },
-    { href: '/notifications', icon: 'notifications', label: 'Notifications' },
+    { href: '/notifications', icon: 'notifications', label: 'Notifications', hasNotification: notificationCount > 0 },
     { href: '/messages', icon: 'messages', label: 'Messages' },
     { href: '/profile', icon: 'profile', label: 'Profile' }
   ];
@@ -130,7 +172,7 @@ export default function Navigation() {
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      className={`flex items-center space-x-4 px-4 py-3 rounded-full text-xl transition-colors hover:bg-gray-900 ${
+                      className={`flex items-center space-x-4 px-4 py-3 rounded-full text-xl transition-colors hover:bg-gray-900 relative ${
                         isActive ? 'font-bold' : 'font-normal'
                       }`}
                     >
@@ -138,6 +180,9 @@ export default function Navigation() {
                       <span className={isActive ? 'text-white' : 'text-gray-300'}>
                         {item.label}
                       </span>
+                      {item.hasNotification && (
+                        <div className="absolute top-2 left-7 w-2 h-2 bg-red-500 rounded-full"></div>
+                      )}
                     </Link>
                   </li>
                 );
@@ -253,9 +298,12 @@ export default function Navigation() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex flex-col items-center py-2 px-3"
+                className="flex flex-col items-center py-2 px-3 relative"
               >
                 {getIcon(item.icon, isActive)}
+                {item.hasNotification && (
+                  <div className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full"></div>
+                )}
               </Link>
             );
           })}

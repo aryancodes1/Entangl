@@ -4,12 +4,12 @@ import Link from 'next/link';
 import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import PhoneVerification from '../../components/PhoneVerification';
+import EmailVerification from '../../components/EmailVerification';
 
 export default function SignUp() {
   const router = useRouter();
-  const [showPhoneVerification, setShowPhoneVerification] = useState(false);
-  const [verifiedPhone, setVerifiedPhone] = useState(null);
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [verifiedEmail, setVerifiedEmail] = useState(null);
   const [formData, setFormData] = useState({
     email: '',
     fullName: '',
@@ -29,11 +29,11 @@ export default function SignUp() {
     };
     checkSession();
 
-    // Check if phone is already verified
-    const phoneVerified = localStorage.getItem('phoneVerified');
-    const phone = localStorage.getItem('verifiedPhone');
-    if (phoneVerified === 'true' && phone) {
-      setVerifiedPhone(phone);
+    // Check if email is already verified
+    const emailVerified = localStorage.getItem('emailVerified');
+    const email = localStorage.getItem('verifiedEmail');
+    if (emailVerified === 'true' && email) {
+      setVerifiedEmail(email);
     }
   }, [router]);
 
@@ -82,10 +82,10 @@ export default function SignUp() {
   const handleManualSignup = async (e) => {
     e.preventDefault();
     
-    // Check if phone is verified
-    const phoneVerified = localStorage.getItem('phoneVerified');
-    if (phoneVerified !== 'true') {
-      setShowPhoneVerification(true);
+    // Check if email is verified
+    const emailVerified = localStorage.getItem('emailVerified');
+    if (emailVerified !== 'true') {
+      setShowEmailVerification(true);
       return;
     }
 
@@ -101,7 +101,7 @@ export default function SignUp() {
           username: formData.username,
           displayName: formData.fullName,
           password: formData.password,
-          phone: verifiedPhone
+          verifiedEmail: verifiedEmail
         }),
       });
 
@@ -151,21 +151,21 @@ export default function SignUp() {
     }
   };
 
-  const handlePhoneVerificationComplete = (phoneNumber) => {
-    setVerifiedPhone(phoneNumber);
-    setShowPhoneVerification(false);
+  const handleEmailVerificationComplete = (email) => {
+    setVerifiedEmail(email);
+    setShowEmailVerification(false);
   };
 
   const handleBackToSignup = () => {
-    setShowPhoneVerification(false);
+    setShowEmailVerification(false);
   };
 
-  if (showPhoneVerification) {
+  if (showEmailVerification) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white font-sans">
         <div className="w-full max-w-sm p-4">
-          <PhoneVerification 
-            onVerificationComplete={handlePhoneVerificationComplete}
+          <EmailVerification 
+            onVerificationComplete={handleEmailVerificationComplete}
             onBack={handleBackToSignup}
             context="signup"
           />
@@ -180,15 +180,15 @@ export default function SignUp() {
         <div className="space-y-6 text-center">
           <h1 className="text-4xl font-bold">Create your account</h1>
           
-          {verifiedPhone && (
+          {verifiedEmail && (
             <div className="bg-green-900 border border-green-700 rounded-md p-3 text-sm">
-              <p className="text-green-300">✓ Phone verified: {verifiedPhone}</p>
+              <p className="text-green-300">✓ Email verified: {verifiedEmail}</p>
             </div>
           )}
 
-          {!verifiedPhone && (
+          {!verifiedEmail && (
             <div className="bg-yellow-900 border border-yellow-700 rounded-md p-3 text-sm">
-              <p className="text-yellow-300">⚠️ Phone verification required to sign up</p>
+              <p className="text-yellow-300">⚠️ Email verification required to sign up</p>
             </div>
           )}
           
@@ -198,7 +198,7 @@ export default function SignUp() {
               className="w-full flex items-center justify-center gap-2 bg-white text-black font-semibold py-2 rounded-full hover:bg-gray-200 transition-colors text-sm"
             >
               <svg className="w-5 h-5" viewBox="0 0 488 512"><path d="M488 261.8C488 403.3 381.5 512 244 512 109.8 512 0 402.2 0 261.8 0 120.5 109.8 8.4 244 8.4c77.3 0 143.3 30.1 191.4 78.4l-77.9 77.9C325.8 134.8 289.1 112 244 112c-66.3 0-120.3 54-120.3 120.3s54 120.3 120.3 120.3c75.3 0 104.2-52.5 108.7-79.3H244V202h151.1c2.1 11.1 3.4 22.5 3.4 34.9z"/></svg>
-              {verifiedPhone ? 'Continue with Google' : 'Verify Phone & Sign up with Google'}
+              {verifiedEmail ? 'Continue with Google' : 'Verify Email & Sign up with Google'}
             </button>
             <div className="flex items-center justify-center space-x-2 my-4">
               <div className="h-px bg-gray-700 w-full"></div>
@@ -222,7 +222,7 @@ export default function SignUp() {
                 value={formData.email}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-700 rounded-md bg-black text-white placeholder-gray-500 focus:outline-none focus:border-violet-500"
-                disabled={!verifiedPhone}
+                disabled={!verifiedEmail}
                 required
               />
               {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
@@ -236,7 +236,7 @@ export default function SignUp() {
                 value={formData.fullName}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-700 rounded-md bg-black text-white placeholder-gray-500 focus:outline-none focus:border-violet-500"
-                disabled={!verifiedPhone}
+                disabled={!verifiedEmail}
                 required
               />
               {errors.fullName && <p className="text-red-400 text-xs mt-1">{errors.fullName}</p>}
@@ -250,7 +250,7 @@ export default function SignUp() {
                 value={formData.username}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-700 rounded-md bg-black text-white placeholder-gray-500 focus:outline-none focus:border-violet-500"
-                disabled={!verifiedPhone}
+                disabled={!verifiedEmail}
                 required
               />
               {usernameChecking && <p className="text-gray-400 text-xs mt-1">Checking availability...</p>}
@@ -265,7 +265,7 @@ export default function SignUp() {
                 value={formData.password}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-700 rounded-md bg-black text-white placeholder-gray-500 focus:outline-none focus:border-violet-500"
-                disabled={!verifiedPhone}
+                disabled={!verifiedEmail}
                 required
                 minLength={6}
               />
@@ -277,10 +277,10 @@ export default function SignUp() {
             </p>
             <button
               type="submit"
-              disabled={!verifiedPhone || loading || usernameChecking || errors.username}
+              disabled={!verifiedEmail || loading || usernameChecking || errors.username}
               className="w-full bg-violet-500 text-white font-bold py-2.5 rounded-full hover:bg-violet-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Creating Account...' : (verifiedPhone ? 'Sign up' : 'Verify Phone First')}
+              {loading ? 'Creating Account...' : (verifiedEmail ? 'Sign up' : 'Verify Email First')}
             </button>
           </form>
         </div>
@@ -291,16 +291,16 @@ export default function SignUp() {
               Log in
             </Link>
           </p>
-          {verifiedPhone && (
+          {verifiedEmail && (
             <button 
               onClick={() => {
-                localStorage.removeItem('phoneVerified');
-                localStorage.removeItem('verifiedPhone');
-                setVerifiedPhone(null);
+                localStorage.removeItem('emailVerified');
+                localStorage.removeItem('verifiedEmail');
+                setVerifiedEmail(null);
               }}
               className="text-violet-400 hover:underline text-xs mt-2 block w-full"
             >
-              Use different phone number
+              Use different email address
             </button>
           )}
         </div>

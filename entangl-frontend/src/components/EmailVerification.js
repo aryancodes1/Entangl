@@ -2,16 +2,15 @@
 
 import { useState } from 'react';
 
-export default function PhoneVerification({ onVerificationComplete, onBack, context = 'signup' }) {
-  const [step, setStep] = useState('phone'); // 'phone' or 'otp'
-  const [phoneNumber, setPhoneNumber] = useState('');
+export default function EmailVerification({ onVerificationComplete, onBack, context = 'signup' }) {
+  const [step, setStep] = useState('email'); // 'email' or 'otp'
+  const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
 
-  // Helper functions defined early
-  const handlePhoneSubmit = (e) => {
+  const handleEmailSubmit = (e) => {
     e.preventDefault();
     sendOTP();
   };
@@ -22,8 +21,9 @@ export default function PhoneVerification({ onVerificationComplete, onBack, cont
   };
 
   const sendOTP = async () => {
-    if (!phoneNumber || phoneNumber.replace(/\D/g, '').length < 10) {
-      setError('Please enter a valid phone number');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      setError('Please enter a valid email address');
       return;
     }
 
@@ -31,14 +31,14 @@ export default function PhoneVerification({ onVerificationComplete, onBack, cont
     setError('');
 
     try {
-      console.log('Sending OTP to:', phoneNumber);
+      console.log('Sending OTP to:', email);
       
       const response = await fetch('/api/auth/send-otp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ phoneNumber }),
+        body: JSON.stringify({ email }),
       });
 
       const data = await response.json();
@@ -46,7 +46,7 @@ export default function PhoneVerification({ onVerificationComplete, onBack, cont
 
       if (response.ok) {
         setStep('otp');
-        setPhoneNumber(data.phoneNumber || phoneNumber);
+        setEmail(data.email || email);
         
         setResendCooldown(60);
         const interval = setInterval(() => {
@@ -59,23 +59,15 @@ export default function PhoneVerification({ onVerificationComplete, onBack, cont
           });
         }, 1000);
         
-        // Show success message with dev OTP if available
-        if (data.devOtp && process.env.NODE_ENV === 'development') {
-          alert(`OTP sent! For testing, your OTP is: ${data.devOtp}`);
+        // Show appropriate success message
+        if (data.warning) {
+          alert(`${data.message}. ${data.warning}`);
         } else {
-          alert('OTP sent successfully! Check your phone for the verification code.');
+          alert('OTP sent successfully! Check your email for the verification code.');
         }
       } else {
         console.error('Send OTP failed:', data);
-        
-        // Handle specific error codes
-        if (data.code === 'TEST_BLOCKED') {
-          setError('This phone number is blocked for testing. Try a different number.');
-        } else if (data.code === 'SERVICE_UNAVAILABLE') {
-          setError('SMS service is temporarily unavailable. Please try again later.');
-        } else {
-          setError(data.error || 'Failed to send OTP');
-        }
+        setError(data.error || 'Failed to send OTP');
       }
     } catch (error) {
       console.error('Network error:', error);
@@ -95,14 +87,14 @@ export default function PhoneVerification({ onVerificationComplete, onBack, cont
     setError('');
 
     try {
-      console.log('Verifying OTP:', otp, 'for phone:', phoneNumber);
+      console.log('Verifying OTP:', otp, 'for email:', email);
       
       const response = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ phoneNumber, otp }),
+        body: JSON.stringify({ email, otp }),
       });
 
       const data = await response.json();
@@ -110,11 +102,11 @@ export default function PhoneVerification({ onVerificationComplete, onBack, cont
 
       if (response.ok) {
         // Store verification status in localStorage
-        localStorage.setItem('phoneVerified', 'true');
-        localStorage.setItem('verifiedPhone', data.phoneNumber || phoneNumber);
+        localStorage.setItem('emailVerified', 'true');
+        localStorage.setItem('verifiedEmail', data.email || email);
         
-        alert('Phone number verified successfully!');
-        onVerificationComplete(data.phoneNumber || phoneNumber);
+        alert('Email verified successfully!');
+        onVerificationComplete(data.email || email);
       } else {
         console.error('Verify OTP failed:', data);
         setError(data.error || 'Invalid OTP');
@@ -127,43 +119,38 @@ export default function PhoneVerification({ onVerificationComplete, onBack, cont
     }
   };
 
-  if (step === 'phone') {
+  if (step === 'email') {
     return (
       <div className="space-y-6 text-center">
         <div>
-          <h1 className="text-4xl font-bold">Verify your phone</h1>
+          <h1 className="text-4xl font-bold">Verify your email</h1>
           <p className="text-gray-400 mt-2">
             {context === 'login' 
-              ? 'Phone verification is required to sign in' 
-              : "We'll send you a code to verify your number"
+              ? 'Email verification is required to sign in' 
+              : "We'll send you a code to verify your email"
             }
           </p>
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mt-3 p-3 bg-yellow-900/20 border border-yellow-700 rounded-md">
-              <p className="text-yellow-300 text-sm">
-                📱 Development Mode: OTP will be displayed in the alert for testing
-              </p>
-            </div>
-          )}
+          <div className="mt-3 p-3 bg-blue-900/20 border border-blue-700 rounded-md">
+            <p className="text-blue-300 text-sm">
+              📧 Real verification email will be sent to your inbox
+            </p>
+          </div>
         </div>
         
-        <form onSubmit={handlePhoneSubmit} className="space-y-4 text-left">
+        <form onSubmit={handleEmailSubmit} className="space-y-4 text-left">
           <input
-            type="tel"
-            placeholder="Phone number (e.g., +1234567890 or 1234567890)"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
+            type="email"
+            placeholder="Enter your email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full px-4 py-3 border border-gray-700 rounded-md bg-black text-white placeholder-gray-500 focus:outline-none focus:border-violet-500"
             required
           />
-          {process.env.NODE_ENV === 'development' && (
-            <div className="text-xs text-gray-400">
-              <p>Test numbers:</p>
-              <p>• End with 000 to test blocked number</p>
-              <p>• End with 999 to test service unavailable</p>
-              <p>• Any other number will work</p>
-            </div>
-          )}
+          <div className="text-xs text-gray-400">
+            <p>• Enter your real email address</p>
+            <p>• You will receive an email with a 6-digit code</p>
+            <p>• Check your spam folder if you don't see it</p>
+          </div>
           {error && (
             <div className="bg-red-900/20 border border-red-700 rounded-md p-3">
               <p className="text-red-300 text-sm">{error}</p>
@@ -174,7 +161,7 @@ export default function PhoneVerification({ onVerificationComplete, onBack, cont
             disabled={loading}
             className="w-full bg-violet-500 text-white font-bold py-2.5 rounded-full hover:bg-violet-600 transition-colors disabled:opacity-50"
           >
-            {loading ? 'Sending...' : 'Send OTP'}
+            {loading ? 'Sending Email...' : 'Send OTP'}
           </button>
         </form>
 
@@ -192,7 +179,7 @@ export default function PhoneVerification({ onVerificationComplete, onBack, cont
     <div className="space-y-6 text-center">
       <div>
         <h1 className="text-4xl font-bold">Enter verification code</h1>
-        <p className="text-gray-400 mt-2">We sent a code to {phoneNumber}</p>
+        <p className="text-gray-400 mt-2">We sent a code to {email}</p>
         <p className="text-gray-500 text-sm mt-1">Code expires in 10 minutes</p>
       </div>
       
@@ -222,10 +209,10 @@ export default function PhoneVerification({ onVerificationComplete, onBack, cont
 
       <div className="space-y-2">
         <button 
-          onClick={() => setStep('phone')}
+          onClick={() => setStep('email')}
           className="text-violet-400 hover:underline text-sm block w-full"
         >
-          Change phone number
+          Change email address
         </button>
         <button 
           onClick={sendOTP}

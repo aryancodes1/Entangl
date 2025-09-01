@@ -375,5 +375,66 @@ router.post('/:id/like', authenticateToken, async (req, res) => {
   }
 });
 
+// GET /search - Search posts
+router.get('/search', optionalAuth, async (req, res) => {
+  try {
+    const { q, limit = 20 } = req.query;
+    
+    if (!q || q.trim().length < 1) {
+      return res.json([]);
+    }
+
+    const searchTerm = q.trim();
+    
+    const posts = await prisma.post.findMany({
+      where: {
+        content: {
+          contains: searchTerm,
+          mode: 'insensitive'
+        }
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            avatar: true,
+            verified: true
+          }
+        },
+        likes: {
+          select: {
+            userId: true
+          }
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true
+          }
+        }
+      },
+      orderBy: [
+        { createdAt: 'desc' },
+        { _count: { likes: 'desc' } }
+      ],
+      take: parseInt(limit)
+    });
+
+    const postsWithLikeStatus = posts.map(post => ({
+      ...post,
+      isLiked: req.user ? post.likes.some(like => like.userId === req.user.id) : false,
+      likes: post._count.likes,
+      comments: post._count.comments
+    }));
+
+    res.json(postsWithLikeStatus);
+  } catch (error) {
+    console.error('Post search error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
 

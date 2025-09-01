@@ -4,13 +4,13 @@ import Link from 'next/link';
 import { signIn, getSession, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import PhoneVerification from '../../components/PhoneVerification';
+import EmailVerification from '../../components/EmailVerification';
 
 export default function LogIn() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [showPhoneVerification, setShowPhoneVerification] = useState(false);
-  const [verifiedPhone, setVerifiedPhone] = useState(null);
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [verifiedEmail, setVerifiedEmail] = useState(null);
   const [formData, setFormData] = useState({
     identifier: '',
     password: ''
@@ -30,11 +30,11 @@ export default function LogIn() {
     };
     checkSession();
 
-    // Check if phone is already verified
-    const phoneVerified = localStorage.getItem('phoneVerified');
-    const phone = localStorage.getItem('verifiedPhone');
-    if (phoneVerified === 'true' && phone) {
-      setVerifiedPhone(phone);
+    // Check if email is already verified
+    const emailVerified = localStorage.getItem('emailVerified');
+    const email = localStorage.getItem('verifiedEmail');
+    if (emailVerified === 'true' && email) {
+      setVerifiedEmail(email);
     }
   }, [router]);
 
@@ -58,8 +58,8 @@ export default function LogIn() {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('loginMethod');
-        localStorage.removeItem('phoneVerified');
-        localStorage.removeItem('verifiedPhone');
+        localStorage.removeItem('emailVerified');
+        localStorage.removeItem('verifiedEmail');
       }
     }
   }, [session, status, router]);
@@ -77,10 +77,10 @@ export default function LogIn() {
   const handleManualLogin = async (e) => {
     e.preventDefault();
     
-    // Check if phone is verified
-    const phoneVerified = localStorage.getItem('phoneVerified');
-    if (phoneVerified !== 'true') {
-      setShowPhoneVerification(true);
+    // Check if email is verified
+    const emailVerified = localStorage.getItem('emailVerified');
+    if (emailVerified !== 'true') {
+      setShowEmailVerification(true);
       return;
     }
 
@@ -133,10 +133,10 @@ export default function LogIn() {
   };
 
   const handleGoogleSignIn = () => {
-    // Check if phone is verified
-    const phoneVerified = localStorage.getItem('phoneVerified');
-    if (phoneVerified !== 'true') {
-      setShowPhoneVerification(true);
+    // Check if email is verified
+    const emailVerified = localStorage.getItem('emailVerified');
+    if (emailVerified !== 'true') {
+      setShowEmailVerification(true);
       return;
     }
     
@@ -144,24 +144,24 @@ export default function LogIn() {
     signIn('google', { callbackUrl: '/profile' });
   };
 
-  const handlePhoneVerificationComplete = (phoneNumber) => {
-    setVerifiedPhone(phoneNumber);
-    setShowPhoneVerification(false);
-    // Automatically proceed to Google sign in after phone verification
-    localStorage.setItem('loginMethod', 'google'); // Flag for Google login
+  const handleEmailVerificationComplete = (email) => {
+    setVerifiedEmail(email);
+    setShowEmailVerification(false);
+    // Automatically proceed to Google sign in after email verification
+    localStorage.setItem('loginMethod', 'google');
     signIn('google', { callbackUrl: '/profile' });
   };
 
   const handleBackToLogin = () => {
-    setShowPhoneVerification(false);
+    setShowEmailVerification(false);
   };
 
-  if (showPhoneVerification) {
+  if (showEmailVerification) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white font-sans">
         <div className="w-full max-w-sm p-4">
-          <PhoneVerification 
-            onVerificationComplete={handlePhoneVerificationComplete}
+          <EmailVerification 
+            onVerificationComplete={handleEmailVerificationComplete}
             onBack={handleBackToLogin}
           />
         </div>
@@ -175,15 +175,15 @@ export default function LogIn() {
         <div className="space-y-6 text-center">
           <h1 className="text-4xl font-bold">Sign in to Entangl</h1>
           
-          {verifiedPhone && (
+          {verifiedEmail && (
             <div className="bg-green-900 border border-green-700 rounded-md p-3 text-sm">
-              <p className="text-green-300">✓ Phone verified: {verifiedPhone}</p>
+              <p className="text-green-300">✓ Email verified: {verifiedEmail}</p>
             </div>
           )}
 
-          {!verifiedPhone && (
+          {!verifiedEmail && (
             <div className="bg-yellow-900 border border-yellow-700 rounded-md p-3 text-sm">
-              <p className="text-yellow-300">⚠️ Phone verification required to sign in</p>
+              <p className="text-yellow-300">⚠️ Email verification required to sign in</p>
             </div>
           )}
           
@@ -192,7 +192,7 @@ export default function LogIn() {
             className="w-full flex items-center justify-center gap-2 bg-white text-black font-semibold py-2 rounded-full hover:bg-gray-200 transition-colors text-sm"
           >
             <svg className="w-5 h-5" viewBox="0 0 488 512"><path d="M488 261.8C488 403.3 381.5 512 244 512 109.8 512 0 402.2 0 261.8 0 120.5 109.8 8.4 244 8.4c77.3 0 143.3 30.1 191.4 78.4l-77.9 77.9C325.8 134.8 289.1 112 244 112c-66.3 0-120.3 54-120.3 120.3s54 120.3 120.3 120.3c75.3 0 104.2-52.5 108.7-79.3H244V202h151.1c2.1 11.1 3.4 22.5 3.4 34.9z"/></svg>
-            {verifiedPhone ? 'Continue with Google' : 'Verify Phone & Sign in with Google'}
+            {verifiedEmail ? 'Continue with Google' : 'Verify Email & Sign in with Google'}
           </button>
 
           <div className="flex items-center justify-center space-x-2">
@@ -215,7 +215,7 @@ export default function LogIn() {
               value={formData.identifier}
               onChange={handleInputChange}
               className="w-full px-4 py-3 border border-gray-700 rounded-md bg-black text-white placeholder-gray-500 focus:outline-none focus:border-violet-500"
-              disabled={!verifiedPhone}
+              disabled={!verifiedEmail}
               required
             />
             <input
@@ -225,15 +225,15 @@ export default function LogIn() {
               value={formData.password}
               onChange={handleInputChange}
               className="w-full px-4 py-3 border border-gray-700 rounded-md bg-black text-white placeholder-gray-500 focus:outline-none focus:border-violet-500"
-              disabled={!verifiedPhone}
+              disabled={!verifiedEmail}
               required
             />
             <button
               type="submit"
-              disabled={!verifiedPhone || loading}
+              disabled={!verifiedEmail || loading}
               className="w-full bg-violet-500 text-white font-bold py-2.5 rounded-full hover:bg-violet-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Signing in...' : (verifiedPhone ? 'Log in' : 'Verify Phone First')}
+              {loading ? 'Signing in...' : (verifiedEmail ? 'Log in' : 'Verify Email First')}
             </button>
             <div className="text-center pt-2">
                 <Link href="/password-reset" className="text-sm text-violet-400 hover:underline">
@@ -249,16 +249,16 @@ export default function LogIn() {
               Sign up
             </Link>
           </p>
-          {verifiedPhone && (
+          {verifiedEmail && (
             <button 
               onClick={() => {
-                localStorage.removeItem('phoneVerified');
-                localStorage.removeItem('verifiedPhone');
-                setVerifiedPhone(null);
+                localStorage.removeItem('emailVerified');
+                localStorage.removeItem('verifiedEmail');
+                setVerifiedEmail(null);
               }}
               className="text-violet-400 hover:underline text-xs mt-2 block w-full"
             >
-              Use different phone number
+              Use different email address
             </button>
           )}
         </div>

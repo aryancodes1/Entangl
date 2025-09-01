@@ -3,10 +3,38 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-export default function PostCard({ post, onLike, onComment, onDelete, currentUserId }) {
-  const [isLiked, setIsLiked] = useState(post.isLiked);
-  const [likesCount, setLikesCount] = useState(post.likes);
-  const [commentsCount, setCommentsCount] = useState(post.comments);
+export default function PostCard({ post, onLike, onComment, onDelete, currentUserId, showPrivacyMessage = false }) {
+  // Handle case where we want to show privacy message instead of post
+  if (showPrivacyMessage) {
+    return (
+      <div className="border-b border-gray-200 dark:border-gray-800 px-4 py-8 text-center">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              This account is private
+            </h3>
+            <p className="text-gray-500 max-w-sm">
+              Follow this account to see their posts and activity.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Return null if no post data and not showing privacy message
+  if (!post) {
+    return null;
+  }
+
+  const [isLiked, setIsLiked] = useState(post.isLiked || false);
+  const [likesCount, setLikesCount] = useState(post.likes || 0);
+  const [commentsCount, setCommentsCount] = useState(post.comments || 0);
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');

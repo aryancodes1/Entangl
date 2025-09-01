@@ -1,53 +1,53 @@
 import { NextResponse } from 'next/server';
+import nodemailer from 'nodemailer';
 
-// For production, use Redis or a database. For now, using Map with longer persistence
+// For production, use Redis or a database. For now, using Map
 const otpStore = global.otpStore || new Map();
 if (!global.otpStore) {
   global.otpStore = otpStore;
 }
 
-// Twilio configuration - PRODUCTION MODE
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+// Email configuration for OTP delivery
+const emailConfig = {
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: process.env.SMTP_PORT || 587,
+  secure: false, // Use TLS
+  auth: {
+    user: process.env.SMTP_USER, // Your Gmail address
+    pass: process.env.SMTP_PASS  // Your Gmail app password
+  }
+};
 
-let twilioClient;
-if (accountSid && authToken) {
-  const twilio = require('twilio');
-  twilioClient = twilio(accountSid, authToken);
+// Create transporter
+let transporter;
+try {
+  if (emailConfig.auth.user && emailConfig.auth.pass) {
+    transporter = nodemailer.createTransport(emailConfig);
+  }
+} catch (error) {
+  console.error('Failed to create email transporter:', error);
 }
 
 export async function POST(request) {
   try {
-    const { phoneNumber } = await request.json();
+    const { email } = await request.json();
 
-    if (!phoneNumber) {
-      return NextResponse.json({ error: 'Phone number is required' }, { status: 400 });
+    if (!email) {
+      return NextResponse.json({ error: 'Email address is required' }, { status: 400 });
     }
 
-    // Clean and validate phone number
-    const cleanedPhone = phoneNumber.replace(/\D/g, '');
-    if (cleanedPhone.length < 10) {
-      return NextResponse.json({ error: 'Invalid phone number format' }, { status: 400 });
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
     }
 
-    // Format phone number for international use
-    let formattedPhone;
-    if (phoneNumber.startsWith('+')) {
-      formattedPhone = phoneNumber;
-    } else if (cleanedPhone.length === 10) {
-      // Assume US number
-      formattedPhone = `+1${cleanedPhone}`;
-    } else if (cleanedPhone.length === 11 && cleanedPhone.startsWith('1')) {
-      formattedPhone = `+${cleanedPhone}`;
-    } else {
-      formattedPhone = `+${cleanedPhone}`;
-    }
+    const normalizedEmail = email.toLowerCase().trim();
 
-    console.log(`Processing OTP request for: ${formattedPhone}`);
+    console.log(`Processing OTP request for: ${normalizedEmail}`);
 
     // Check if OTP was recently sent (rate limiting)
-    const existingOtp = otpStore.get(formattedPhone);
+    const existingOtp = otpStore.get(normalizedEmail);
     if (existingOtp && (Date.now() - existingOtp.sentAt) < 60000) {
       return NextResponse.json({ 
         error: 'Please wait 60 seconds before requesting another OTP' 
@@ -58,93 +58,81 @@ export async function POST(request) {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     
     // Store OTP with expiration (10 minutes)
-    otpStore.set(formattedPhone, {
+    otpStore.set(normalizedEmail, {
       otp,
       expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
       sentAt: Date.now(),
       attempts: 0
     });
 
-    const otpMessage = `Your Entangl verification code is: ${otp}. This code will expire in 10 minutes. Don't share this code with anyone.`;
+    console.log(`🔐 Generated OTP for ${normalizedEmail}: ${otp}`);
 
-    // Validate Twilio configuration
-    if (!twilioClient || !twilioPhoneNumber) {
-      console.error('Twilio not configured properly:', {
-        hasClient: !!twilioClient,
-        hasPhoneNumber: !!twilioPhoneNumber,
-        accountSid: accountSid ? 'Set' : 'Missing',
-        authToken: authToken ? 'Set' : 'Missing'
-      });
-      
-      return NextResponse.json({ 
-        error: 'SMS service not configured. Please contact support.',
-        details: 'Twilio configuration missing'
-      }, { status: 500 });
-    }
+    // Send email with OTP
+    if (transporter) {
+      try {
+        const mailOptions = {
+          from: {
+            name: 'Entangl',
+            address: process.env.SMTP_USER
+          },
+          to: normalizedEmail,
+          subject: 'Your Entangl Verification Code',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center;">
+                <h1 style="color: white; margin: 0; font-size: 28px;">Entangl</h1>
+              </div>
+              <div style="padding: 30px; background-color: #f9f9f9;">
+                <h2 style="color: #333; margin-bottom: 20px;">Email Verification</h2>
+                <p style="color: #666; font-size: 16px; line-height: 1.5;">
+                  Your verification code for Entangl is:
+                </p>
+                <div style="background: white; border: 2px solid #667eea; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
+                  <span style="font-size: 32px; font-weight: bold; color: #667eea; letter-spacing: 8px;">${otp}</span>
+                </div>
+                <p style="color: #666; font-size: 14px;">
+                  This code will expire in 10 minutes. Please do not share this code with anyone.
+                </p>
+                <p style="color: #666; font-size: 14px;">
+                  If you didn't request this code, please ignore this email.
+                </p>
+              </div>
+              <div style="background: #333; color: white; text-align: center; padding: 15px; font-size: 12px;">
+                © ${new Date().getFullYear()} Entangl. All rights reserved.
+              </div>
+            </div>
+          `,
+          text: `Your Entangl verification code is: ${otp}. This code expires in 10 minutes. Do not share this code with anyone.`
+        };
 
-    try {
-      console.log(`Sending SMS to ${formattedPhone} from ${twilioPhoneNumber}`);
-      
-      const message = await twilioClient.messages.create({
-        body: otpMessage,
-        from: twilioPhoneNumber,
-        to: formattedPhone
-      });
+        await transporter.sendMail(mailOptions);
+        console.log(`✅ OTP email sent to ${normalizedEmail}`);
 
-      console.log(`OTP sent successfully via Twilio:`, {
-        messageSid: message.sid,
-        to: formattedPhone,
-        status: message.status
-      });
-      
-      return NextResponse.json({ 
-        message: 'OTP sent successfully',
-        phoneNumber: formattedPhone,
-        messageSid: message.sid
-      });
+        return NextResponse.json({ 
+          message: 'OTP sent successfully to your email',
+          email: normalizedEmail
+        });
 
-    } catch (twilioError) {
-      console.error('Twilio error details:', {
-        code: twilioError.code,
-        message: twilioError.message,
-        status: twilioError.status,
-        details: twilioError.details
-      });
-      
-      // Handle specific Twilio errors
-      let errorMessage = 'Failed to send OTP';
-      
-      switch (twilioError.code) {
-        case 21211:
-          errorMessage = 'Invalid phone number format';
-          break;
-        case 21408:
-          errorMessage = 'Permission to send SMS has not been enabled for this region';
-          break;
-        case 21614:
-          errorMessage = 'Phone number is not a valid mobile number';
-          break;
-        case 21610:
-          errorMessage = 'Phone number is not verified (Trial account limitation)';
-          break;
-        case 20003:
-          errorMessage = 'Authentication failed - check Twilio credentials';
-          break;
-        case 21606:
-          errorMessage = 'Phone number is not a valid mobile number';
-          break;
-        default:
-          errorMessage = `Twilio error: ${twilioError.message}`;
+      } catch (emailError) {
+        console.error('Email sending failed:', emailError);
+        
+        // Return success but with warning - OTP is still stored for verification
+        return NextResponse.json({ 
+          message: 'OTP generated but email delivery failed',
+          email: normalizedEmail,
+          warning: 'Email service unavailable. Check console for OTP.',
+          devOtp: process.env.NODE_ENV === 'development' ? otp : undefined
+        });
       }
-      
-      // Clean up stored OTP since sending failed
-      otpStore.delete(formattedPhone);
+    } else {
+      console.log(`📧 Email transporter not configured. OTP: ${otp}`);
       
       return NextResponse.json({ 
-        error: errorMessage,
-        code: twilioError.code,
-        details: twilioError.message
-      }, { status: 400 });
+        message: 'OTP generated (email service not configured)',
+        email: normalizedEmail,
+        warning: 'Email service not configured. Check console for OTP.',
+        devOtp: process.env.NODE_ENV === 'development' ? otp : undefined
+      });
     }
 
   } catch (error) {

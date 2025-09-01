@@ -75,9 +75,12 @@ model Comment {
 }
 
 model Follow {
-  id          String @id @default(auto()) @map("_id") @db.ObjectId
-  followerId  String @db.ObjectId
-  followingId String @db.ObjectId
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  followerId  String   @db.ObjectId
+  followingId String   @db.ObjectId
+  status      String   @default("pending") // "pending", "accepted"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
   follower  User @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)

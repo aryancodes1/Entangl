@@ -1,24 +1,26 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import Navigation from '../../components/Navigation';
 import PostCard from '../../components/PostCard';
 import Link from 'next/link';
 
-export default function Explore() {
+export default function Search() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
+  const searchParams = useSearchParams();
+  const query = searchParams.get('q') || '';
+  
+  const [searchQuery, setSearchQuery] = useState(query);
   const [activeTab, setActiveTab] = useState('top');
-  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState(null);
+  const [posts, setPosts] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
@@ -26,8 +28,42 @@ export default function Explore() {
       setCurrentUserId(userData.id);
     }
 
-    loadTrendingContent();
-  }, []);
+    if (query) {
+      performSearch(query);
+    } else {
+      loadTrendingContent();
+    }
+  }, [query]);
+
+  const performSearch = async (searchTerm) => {
+    if (!searchTerm.trim()) return;
+    
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+      // Search users and posts simultaneously
+      const [usersResponse, postsResponse] = await Promise.all([
+        fetch(`http://localhost:8080/api/users/search?q=${encodeURIComponent(searchTerm)}`, { headers }),
+        fetch(`http://localhost:8080/api/posts/search?q=${encodeURIComponent(searchTerm)}`, { headers })
+      ]);
+
+      if (usersResponse.ok) {
+        const usersData = await usersResponse.json();
+        setUsers(usersData.filter(user => user.id !== currentUserId));
+      }
+
+      if (postsResponse.ok) {
+        const postsData = await postsResponse.json();
+        setPosts(postsData);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadTrendingContent = async () => {
     setLoading(true);
@@ -36,8 +72,8 @@ export default function Explore() {
       const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
       const [usersResponse, postsResponse] = await Promise.all([
-        fetch('http://localhost:8080/api/users?limit=20', { headers }),
-        fetch('http://localhost:8080/api/posts?limit=30', { headers })
+        fetch('http://localhost:8080/api/users?limit=10', { headers }),
+        fetch('http://localhost:8080/api/posts?limit=20', { headers })
       ]);
 
       if (usersResponse.ok) {
@@ -56,41 +92,11 @@ export default function Explore() {
     }
   };
 
-  const performSearch = async (searchTerm) => {
-    if (!searchTerm.trim()) {
-      loadTrendingContent();
-      return;
-    }
-
-    setSearchLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-
-      const [usersResponse, postsResponse] = await Promise.all([
-        fetch(`http://localhost:8080/api/users/search?q=${encodeURIComponent(searchTerm)}`, { headers }),
-        fetch(`http://localhost:8080/api/posts/search?q=${encodeURIComponent(searchTerm)}`, { headers })
-      ]);
-
-      if (usersResponse.ok) {
-        const usersData = await usersResponse.json();
-        setUsers(usersData.filter(user => user.id !== currentUserId));
-      }
-
-      if (postsResponse.ok) {
-        const postsData = await postsResponse.json();
-        setPosts(postsData);
-      }
-    } catch (error) {
-      console.error('Search error:', error);
-    } finally {
-      setSearchLoading(false);
-    }
-  };
-
   const handleSearch = (e) => {
     e.preventDefault();
-    performSearch(searchQuery);
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+    }
   };
 
   const handleSearchInputChange = async (e) => {
@@ -99,6 +105,7 @@ export default function Explore() {
     
     if (value.length > 0) {
       setShowSuggestions(true);
+      // Fetch suggestions
       try {
         const token = localStorage.getItem('token');
         const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
@@ -114,22 +121,13 @@ export default function Explore() {
     } else {
       setShowSuggestions(false);
       setSuggestions([]);
-      performSearch('');
     }
   };
 
-  const handleFollowRequest = async (userId) => {
+  const handleFollow = async (userId) => {
     try {
       const token = localStorage.getItem('token');
-      
-      if (!token) {
-        alert('Please log in to follow users');
-        return;
-      }
-
-      console.log('Sending follow request to:', userId);
-
-      const response = await fetch('http://localhost:8080/api/follows/request', {
+      const response = await fetch('http://localhost:8080/api/follows', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -138,74 +136,17 @@ export default function Explore() {
         body: JSON.stringify({ followingId: userId }),
       });
 
-      console.log('Follow request response status:', response.status);
-
       if (response.ok) {
         const data = await response.json();
-        console.log('Follow request response:', data);
-        
-        // Update user status in the UI based on response
+        // Update user follow status
         setUsers(prev => prev.map(user => 
           user.id === userId 
-            ? { 
-                ...user, 
-                followStatus: data.status,
-                isFollowing: data.status === 'following'
-              }
+            ? { ...user, isFollowing: data.isFollowing }
             : user
         ));
-
-        // Update suggestions as well
-        setSuggestions(prev => prev.map(user => 
-          user.id === userId 
-            ? { 
-                ...user, 
-                followStatus: data.status,
-                isFollowing: data.status === 'following'
-              }
-            : user
-        ));
-
-        // Show appropriate message
-        if (data.status === 'following') {
-          alert('Now following user!');
-        } else if (data.status === 'pending') {
-          alert('Follow request sent!');
-        } else if (data.status === 'none') {
-          alert('Follow request cancelled');
-        }
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Follow request failed:', errorData);
-        alert('Error: ' + (errorData.error || errorData.details || 'Unknown error'));
       }
     } catch (error) {
-      console.error('Follow request error:', error);
-      alert('Error sending follow request. Please try again.');
-    }
-  };
-
-  const getFollowButtonText = (user) => {
-    switch (user.followStatus) {
-      case 'following':
-        return 'Following';
-      case 'pending':
-        return 'Requested';
-      case 'none':
-      default:
-        return 'Follow';
-    }
-  };
-
-  const getFollowButtonStyle = (user) => {
-    switch (user.followStatus) {
-      case 'following':
-        return 'bg-gray-200 dark:bg-gray-800 text-black dark:text-white hover:bg-red-100 dark:hover:bg-red-900 hover:text-red-600';
-      case 'pending':
-        return 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 cursor-not-allowed';
-      case 'none':
-      default:
-        return 'bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200';
+      console.error('Follow error:', error);
     }
   };
 
@@ -213,7 +154,8 @@ export default function Explore() {
     { id: 'top', label: 'Top', icon: '⭐' },
     { id: 'latest', label: 'Latest', icon: '🕒' },
     { id: 'people', label: 'People', icon: '👥' },
-    { id: 'photos', label: 'Photos', icon: '📸' }
+    { id: 'photos', label: 'Photos', icon: '📸' },
+    { id: 'videos', label: 'Videos', icon: '🎥' }
   ];
 
   const getFilteredContent = () => {
@@ -222,25 +164,12 @@ export default function Explore() {
         return users;
       case 'photos':
         return posts.filter(post => post.imageUrl);
-      case 'latest':
-        return posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      case 'videos':
+        return posts.filter(post => post.videoUrl);
       default:
-        return posts;
+        return { users: users.slice(0, 3), posts };
     }
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white">
-        <Navigation />
-        <div className="lg:ml-64">
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white">
@@ -271,7 +200,7 @@ export default function Explore() {
                         type="button"
                         onClick={() => {
                           setSearchQuery('');
-                          loadTrendingContent();
+                          router.push('/search');
                         }}
                         className="absolute right-4 top-3.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                       >
@@ -320,48 +249,42 @@ export default function Explore() {
             </div>
 
             {/* Tabs */}
-            <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-800">
-              {tabs.map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 px-4 py-3 font-medium text-sm whitespace-nowrap transition-colors relative ${
-                    activeTab === tab.id
-                      ? 'text-black dark:text-white'
-                      : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                  }`}
-                >
-                  <span>{tab.icon}</span>
-                  <span>{tab.label}</span>
-                  {activeTab === tab.id && (
-                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-blue-500 rounded-full"></div>
-                  )}
-                </button>
-              ))}
-            </div>
+            {query && (
+              <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-800">
+                {tabs.map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center space-x-2 px-4 py-3 font-medium text-sm whitespace-nowrap transition-colors relative ${
+                      activeTab === tab.id
+                        ? 'text-black dark:text-white'
+                        : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                    }`}
+                  >
+                    <span>{tab.icon}</span>
+                    <span>{tab.label}</span>
+                    {activeTab === tab.id && (
+                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-blue-500 rounded-full"></div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Content */}
+          {/* Search Results */}
           <div className="pb-16">
-            {searchLoading ? (
+            {loading ? (
               <div className="flex justify-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
               </div>
-            ) : activeTab === 'people' ? (
-              // People Tab
-              <div>
-                {!searchQuery && (
-                  <div className="p-4">
-                    <h2 className="text-xl font-bold mb-4">Suggested for you</h2>
-                  </div>
-                )}
-                {users.length === 0 ? (
-                  <div className="text-center py-12 px-4">
-                    <p className="text-gray-500">No people found</p>
-                  </div>
-                ) : (
-                  users.map(user => (
-                    <div key={user.id} className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+            ) : !query ? (
+              // Trending/Discover content when no search
+              <div className="p-4">
+                <h2 className="text-xl font-bold mb-4">Discover people</h2>
+                <div className="space-y-3">
+                  {users.slice(0, 5).map(user => (
+                    <div key={user.id} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-900 rounded-lg transition-colors">
                       <Link href={`/user/${user.id}`} className="flex items-center space-x-3 flex-1">
                         {user.avatar ? (
                           <img src={user.avatar} alt={user.displayName} className="w-12 h-12 rounded-full" />
@@ -385,39 +308,97 @@ export default function Explore() {
                           </div>
                           <p className="text-gray-500 text-sm truncate">@{user.username}</p>
                           {user.bio && (
-                            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1 truncate">{user.bio}</p>
+                            <p className="text-gray-600 dark:text-gray-400 text-sm truncate">{user.bio}</p>
                           )}
                         </div>
                       </Link>
                       <button
-                        onClick={() => handleFollowRequest(user.id)}
-                        disabled={user.followStatus === 'pending'}
-                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${getFollowButtonStyle(user)}`}
+                        onClick={() => handleFollow(user.id)}
+                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          user.isFollowing
+                            ? 'bg-gray-200 dark:bg-gray-800 text-black dark:text-white hover:bg-red-100 dark:hover:bg-red-900 hover:text-red-600'
+                            : 'bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200'
+                        }`}
                       >
-                        {getFollowButtonText(user)}
+                        {user.isFollowing ? 'Following' : 'Follow'}
                       </button>
                     </div>
-                  ))
-                )}
+                  ))}
+                </div>
               </div>
             ) : (
-              // Posts Tab
-              <div>
-                {posts.length === 0 ? (
-                  <div className="text-center py-12 px-4">
-                    <p className="text-gray-500">No posts found</p>
+              // Search results
+              <>
+                {activeTab === 'people' ? (
+                  <div>
+                    {users.length === 0 ? (
+                      <div className="text-center py-12 px-4">
+                        <p className="text-gray-500">No people found for "{query}"</p>
+                      </div>
+                    ) : (
+                      users.map(user => (
+                        <div key={user.id} className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+                          <Link href={`/user/${user.id}`} className="flex items-center space-x-3 flex-1">
+                            {user.avatar ? (
+                              <img src={user.avatar} alt={user.displayName} className="w-12 h-12 rounded-full" />
+                            ) : (
+                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                                <span className="text-white font-semibold">
+                                  {user.displayName?.[0] || user.username?.[0]}
+                                </span>
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-1">
+                                <p className="font-semibold text-black dark:text-white truncate">
+                                  {user.displayName || user.username}
+                                </p>
+                                {user.verified && (
+                                  <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-2.284-1.525c-.33-.22-.418-.66-.196-.99.22-.33.66-.418.99-.196L10.436 14.7l3.852-5.778c.22-.33.66-.418.99-.196.33.22.418.66.196.99z"/>
+                                  </svg>
+                                )}
+                              </div>
+                              <p className="text-gray-500 text-sm truncate">@{user.username}</p>
+                              {user.bio && (
+                                <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">{user.bio}</p>
+                              )}
+                            </div>
+                          </Link>
+                          <button
+                            onClick={() => handleFollow(user.id)}
+                            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                              user.isFollowing
+                                ? 'bg-gray-200 dark:bg-gray-800 text-black dark:text-white hover:bg-red-100 dark:hover:bg-red-900 hover:text-red-600'
+                                : 'bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200'
+                            }`}
+                          >
+                            {user.isFollowing ? 'Following' : 'Follow'}
+                          </button>
+                        </div>
+                      ))
+                    )}
                   </div>
                 ) : (
-                  getFilteredContent().map(post => (
-                    <PostCard
-                      key={post.id}
-                      post={post}
-                      currentUserId={currentUserId}
-                      onDelete={() => {}}
-                    />
-                  ))
+                  // Posts, photos, videos, etc.
+                  <div>
+                    {posts.length === 0 ? (
+                      <div className="text-center py-12 px-4">
+                        <p className="text-gray-500">No posts found for "{query}"</p>
+                      </div>
+                    ) : (
+                      posts.map(post => (
+                        <PostCard
+                          key={post.id}
+                          post={post}
+                          currentUserId={currentUserId}
+                          onDelete={() => {}}
+                        />
+                      ))
+                    )}
+                  </div>
                 )}
-              </div>
+              </>
             )}
           </div>
         </div>

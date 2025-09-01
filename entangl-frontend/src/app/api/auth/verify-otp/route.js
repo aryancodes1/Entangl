@@ -8,55 +8,43 @@ if (!global.otpStore) {
 
 export async function POST(request) {
   try {
-    const { phoneNumber, otp } = await request.json();
+    const { email, otp } = await request.json();
 
-    if (!phoneNumber || !otp) {
-      return NextResponse.json({ error: 'Phone number and OTP are required' }, { status: 400 });
+    if (!email || !otp) {
+      return NextResponse.json({ error: 'Email and OTP are required' }, { status: 400 });
     }
 
-    // Clean and format phone number same as send-otp
-    const cleanedPhone = phoneNumber.replace(/\D/g, '');
-    let formattedPhone;
-    
-    if (phoneNumber.startsWith('+')) {
-      formattedPhone = phoneNumber;
-    } else if (cleanedPhone.length === 10) {
-      formattedPhone = `+1${cleanedPhone}`;
-    } else if (cleanedPhone.length === 11 && cleanedPhone.startsWith('1')) {
-      formattedPhone = `+${cleanedPhone}`;
-    } else {
-      formattedPhone = `+${cleanedPhone}`;
-    }
+    const normalizedEmail = email.toLowerCase().trim();
 
-    console.log(`Verifying OTP for: ${formattedPhone}`);
+    console.log(`Verifying OTP for: ${normalizedEmail}`);
 
-    const storedData = otpStore.get(formattedPhone);
+    const storedData = otpStore.get(normalizedEmail);
 
     if (!storedData) {
-      console.log(`No OTP found for ${formattedPhone}`);
+      console.log(`No OTP found for ${normalizedEmail}`);
       return NextResponse.json({ error: 'OTP not found or expired. Please request a new one.' }, { status: 400 });
     }
 
     // Check if OTP is expired
     if (Date.now() > storedData.expiresAt) {
-      console.log(`OTP expired for ${formattedPhone}`);
-      otpStore.delete(formattedPhone);
+      console.log(`OTP expired for ${normalizedEmail}`);
+      otpStore.delete(normalizedEmail);
       return NextResponse.json({ error: 'OTP has expired. Please request a new one.' }, { status: 400 });
     }
 
     // Check attempts limit
     if (storedData.attempts >= 3) {
-      console.log(`Too many attempts for ${formattedPhone}`);
-      otpStore.delete(formattedPhone);
+      console.log(`Too many attempts for ${normalizedEmail}`);
+      otpStore.delete(normalizedEmail);
       return NextResponse.json({ error: 'Too many failed attempts. Please request a new OTP.' }, { status: 400 });
     }
 
     // Verify OTP
     if (storedData.otp !== otp.toString()) {
       storedData.attempts += 1;
-      otpStore.set(formattedPhone, storedData);
+      otpStore.set(normalizedEmail, storedData);
       
-      console.log(`Invalid OTP for ${formattedPhone}. Attempts: ${storedData.attempts}`);
+      console.log(`Invalid OTP for ${normalizedEmail}. Attempts: ${storedData.attempts}`);
       
       return NextResponse.json({ 
         error: `Invalid OTP. ${3 - storedData.attempts} attempts remaining.` 
@@ -64,13 +52,13 @@ export async function POST(request) {
     }
 
     // OTP verified successfully
-    console.log(`OTP verified successfully for ${formattedPhone}`);
-    otpStore.delete(formattedPhone);
+    console.log(`OTP verified successfully for ${normalizedEmail}`);
+    otpStore.delete(normalizedEmail);
 
     return NextResponse.json({ 
-      message: 'Phone number verified successfully',
+      message: 'Email verified successfully',
       verified: true,
-      phoneNumber: formattedPhone
+      email: normalizedEmail
     });
 
   } catch (error) {

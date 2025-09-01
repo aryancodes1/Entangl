@@ -4,32 +4,60 @@ const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
 // GET search users
-router.get('/search', authenticateToken, async (req, res) => {
+router.get('/search', async (req, res) => {
   try {
-    const { q, page = 1, limit = 10 } = req.query;
-    const skip = (page - 1) * limit;
-
-    if (!q) {
-      return res.status(400).json({ error: 'Search query required' });
+    const { q, limit = 10 } = req.query;
+    
+    if (!q || q.trim().length < 1) {
+      return res.json([]);
     }
 
+    const searchTerm = q.trim();
+    
+    // Get current user ID from token if available
+    let currentUserId = null;
+    try {
+      const authHeader = req.headers['authorization'];
+      const token = authHeader && authHeader.split(' ')[1];
+      if (token) {
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+        currentUserId = decoded.userId;
+      }
+    } catch (error) {
+      // Token verification failed, continue without currentUserId
+    }
+    
     const users = await prisma.user.findMany({
       where: {
         OR: [
-          { username: { contains: q, mode: 'insensitive' } },
-          { displayName: { contains: q, mode: 'insensitive' } },
-          { email: { contains: q, mode: 'insensitive' } }
+          {
+            username: {
+              contains: searchTerm,
+              mode: 'insensitive'
+            }
+          },
+          {
+            displayName: {
+              contains: searchTerm,
+              mode: 'insensitive'
+            }
+          },
+          {
+            email: {
+              contains: searchTerm,
+              mode: 'insensitive'
+            }
+          }
         ]
       },
       select: {
         id: true,
-        email: true,
         username: true,
         displayName: true,
         bio: true,
         avatar: true,
         verified: true,
-        createdAt: true,
         _count: {
           select: {
             posts: true,
@@ -38,12 +66,40 @@ router.get('/search', authenticateToken, async (req, res) => {
           }
         }
       },
-      skip: parseInt(skip),
-      take: parseInt(limit)
+      take: parseInt(limit),
+      orderBy: [
+        { verified: 'desc' },
+        { _count: { followers: 'desc' } },
+        { createdAt: 'desc' }
+      ]
     });
-    
-    res.json(users);
+
+    // Add follow status for current user
+    const usersWithFollowStatus = await Promise.all(users.map(async (user) => {
+      if (!currentUserId || user.id === currentUserId) {
+        return { ...user, followStatus: 'none' };
+      }
+
+      const followRelation = await prisma.follow.findUnique({
+        where: {
+          followerId_followingId: {
+            followerId: currentUserId,
+            followingId: user.id
+          }
+        }
+      });
+
+      let followStatus = 'none';
+      if (followRelation) {
+        followStatus = followRelation.status === 'accepted' ? 'following' : 'pending';
+      }
+
+      return { ...user, followStatus };
+    }));
+
+    res.json(usersWithFollowStatus);
   } catch (error) {
+    console.error('User search error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -53,6 +109,7 @@ router.get('/', authenticateToken, async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
     const skip = (page - 1) * limit;
+    const currentUserId = req.user.id;
 
     const users = await prisma.user.findMany({
       select: {
@@ -75,7 +132,31 @@ router.get('/', authenticateToken, async (req, res) => {
       skip: parseInt(skip),
       take: parseInt(limit)
     });
-    res.json(users);
+
+    // Add follow status for current user
+    const usersWithFollowStatus = await Promise.all(users.map(async (user) => {
+      if (user.id === currentUserId) {
+        return { ...user, followStatus: 'none' };
+      }
+
+      const followRelation = await prisma.follow.findUnique({
+        where: {
+          followerId_followingId: {
+            followerId: currentUserId,
+            followingId: user.id
+          }
+        }
+      });
+
+      let followStatus = 'none';
+      if (followRelation) {
+        followStatus = followRelation.status === 'accepted' ? 'following' : 'pending';
+      }
+
+      return { ...user, followStatus };
+    }));
+
+    res.json(usersWithFollowStatus);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
