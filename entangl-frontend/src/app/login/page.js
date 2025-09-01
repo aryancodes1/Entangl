@@ -1,13 +1,37 @@
+'use client'
+
 import Link from 'next/link';
+import { signIn, getSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function LogIn() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const session = await getSession();
+      if (session) {
+        router.push('/profile');
+      }
+    };
+    checkSession();
+  }, [router]);
+
+  const handleGoogleSignIn = () => {
+    signIn('google', { callbackUrl: '/profile' });
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white font-sans">
       <div className="w-full max-w-sm p-4">
         <div className="space-y-6 text-center">
           <h1 className="text-4xl font-bold">Sign in to Entangl</h1>
           
-          <button className="w-full flex items-center justify-center gap-2 bg-white text-black font-semibold py-2 rounded-full hover:bg-gray-200 transition-colors text-sm">
+          <button 
+            onClick={handleGoogleSignIn}
+            className="w-full flex items-center justify-center gap-2 bg-white text-black font-semibold py-2 rounded-full hover:bg-gray-200 transition-colors text-sm"
+          >
             <svg className="w-5 h-5" viewBox="0 0 488 512"><path d="M488 261.8C488 403.3 381.5 512 244 512 109.8 512 0 402.2 0 261.8 0 120.5 109.8 8.4 244 8.4c77.3 0 143.3 30.1 191.4 78.4l-77.9 77.9C325.8 134.8 289.1 112 244 112c-66.3 0-120.3 54-120.3 120.3s54 120.3 120.3 120.3c75.3 0 104.2-52.5 108.7-79.3H244V202h151.1c2.1 11.1 3.4 22.5 3.4 34.9z"/></svg>
             Sign in with Google
           </button>
