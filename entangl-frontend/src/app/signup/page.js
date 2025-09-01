@@ -3,10 +3,13 @@
 import Link from 'next/link';
 import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import PhoneVerification from '../../components/PhoneVerification';
 
 export default function SignUp() {
   const router = useRouter();
+  const [showPhoneVerification, setShowPhoneVerification] = useState(false);
+  const [verifiedPhone, setVerifiedPhone] = useState(null);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -16,11 +19,50 @@ export default function SignUp() {
       }
     };
     checkSession();
+
+    // Check if phone is already verified
+    const phoneVerified = localStorage.getItem('phoneVerified');
+    const phone = localStorage.getItem('verifiedPhone');
+    if (phoneVerified === 'true' && phone) {
+      setVerifiedPhone(phone);
+    }
   }, [router]);
 
   const handleGoogleSignUp = () => {
+    // Check if phone is verified
+    const phoneVerified = localStorage.getItem('phoneVerified');
+    if (phoneVerified !== 'true') {
+      setShowPhoneVerification(true);
+      return;
+    }
+    
     signIn('google', { callbackUrl: '/profile' });
   };
+
+  const handlePhoneVerificationComplete = (phoneNumber) => {
+    setVerifiedPhone(phoneNumber);
+    setShowPhoneVerification(false);
+    // Automatically proceed to Google sign up after phone verification
+    signIn('google', { callbackUrl: '/profile' });
+  };
+
+  const handleBackToSignup = () => {
+    setShowPhoneVerification(false);
+  };
+
+  if (showPhoneVerification) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white font-sans">
+        <div className="w-full max-w-sm p-4">
+          <PhoneVerification 
+            onVerificationComplete={handlePhoneVerificationComplete}
+            onBack={handleBackToSignup}
+            context="signup"
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white font-sans">
@@ -28,13 +70,19 @@ export default function SignUp() {
         <div className="space-y-6 text-center">
           <h1 className="text-4xl font-bold">Create your account</h1>
           
+          {verifiedPhone && (
+            <div className="bg-green-900 border border-green-700 rounded-md p-3 text-sm">
+              <p className="text-green-300">✓ Phone verified: {verifiedPhone}</p>
+            </div>
+          )}
+          
           <div className="pt-2">
             <button 
               onClick={handleGoogleSignUp}
               className="w-full flex items-center justify-center gap-2 bg-white text-black font-semibold py-2 rounded-full hover:bg-gray-200 transition-colors text-sm"
             >
               <svg className="w-5 h-5" viewBox="0 0 488 512"><path d="M488 261.8C488 403.3 381.5 512 244 512 109.8 512 0 402.2 0 261.8 0 120.5 109.8 8.4 244 8.4c77.3 0 143.3 30.1 191.4 78.4l-77.9 77.9C325.8 134.8 289.1 112 244 112c-66.3 0-120.3 54-120.3 120.3s54 120.3 120.3 120.3c75.3 0 104.2-52.5 108.7-79.3H244V202h151.1c2.1 11.1 3.4 22.5 3.4 34.9z"/></svg>
-              Sign up with Google
+              {verifiedPhone ? 'Continue with Google' : 'Sign up with Google'}
             </button>
             <div className="flex items-center justify-center space-x-2 my-4">
               <div className="h-px bg-gray-700 w-full"></div>
@@ -81,6 +129,18 @@ export default function SignUp() {
               Log in
             </Link>
           </p>
+          {verifiedPhone && (
+            <button 
+              onClick={() => {
+                localStorage.removeItem('phoneVerified');
+                localStorage.removeItem('verifiedPhone');
+                setVerifiedPhone(null);
+              }}
+              className="text-violet-400 hover:underline text-xs mt-2 block w-full"
+            >
+              Use different phone number
+            </button>
+          )}
         </div>
       </div>
     </div>

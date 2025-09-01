@@ -13,6 +13,8 @@ const handler = NextAuth({
       session.user.id = token.sub
       session.user.username = token.username || session.user.email?.split('@')[0]
       session.user.joinedDate = token.joinedDate
+      session.user.phoneVerified = token.phoneVerified
+      session.user.verifiedPhone = token.verifiedPhone
       return session
     },
     async jwt({ token, user, account }) {
@@ -20,10 +22,17 @@ const handler = NextAuth({
         token.sub = user.id
         token.username = user.email?.split('@')[0]
         token.joinedDate = new Date().toISOString()
+        
+        // Check if phone was verified (from localStorage - will be passed during sign in)
+        if (typeof window !== 'undefined') {
+          token.phoneVerified = localStorage.getItem('phoneVerified') === 'true'
+          token.verifiedPhone = localStorage.getItem('verifiedPhone')
+        }
       }
       return token
     },
     async signIn({ user, account, profile }) {
+      // In production, you might want to check phone verification status from database
       return true
     }
   },
