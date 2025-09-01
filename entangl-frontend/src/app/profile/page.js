@@ -1,280 +1,524 @@
 'use client'
 
-import { useSession, signOut } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
-
-const Icon = ({ d, className }) => (
-  <svg className={`w-6 h-6 ${className}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={d}></path>
-  </svg>
-)
-
-const ProfilePost = ({ content, timestamp, likes, comments }) => (
-  <div className="border-b border-gray-800 p-4">
-    <p className="text-white mb-3">{content}</p>
-    <div className="flex items-center space-x-6 text-gray-500 text-sm">
-      <span>{new Date(timestamp).toLocaleDateString()}</span>
-      <button className="flex items-center space-x-1 hover:text-rose-500">
-        <Icon d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" className="w-4 h-4" />
-        <span>{likes}</span>
-      </button>
-      <button className="flex items-center space-x-1 hover:text-violet-400">
-        <Icon d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" className="w-4 h-4" />
-        <span>{comments}</span>
-      </button>
-    </div>
-  </div>
-)
+import { useEffect, useState } from 'react';
+import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import Navigation from '../../components/Navigation';
+import PostCard from '../../components/PostCard';
 
 export default function Profile() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
-  const [activeTab, setActiveTab] = useState('posts')
-  const [followersCount] = useState(Math.floor(Math.random() * 1000) + 100)
-  const [followingCount] = useState(Math.floor(Math.random() * 500) + 50)
-  const [postsCount] = useState(Math.floor(Math.random() * 100) + 20)
-  const [imageError, setImageError] = useState(false)
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [userData, setUserData] = useState(null);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    displayName: '',
+    bio: '',
+    avatar: ''
+  });
+  const [activeTab, setActiveTab] = useState('posts');
 
-  // Mock posts data
-  const [userPosts] = useState([
-    {
-      id: 1,
-      content: "Just joined Entangl! Excited to connect with everyone here. 🚀",
-      timestamp: new Date().toISOString(),
-      likes: 15,
-      comments: 3
-    },
-    {
-      id: 2,
-      content: "Working on some exciting new projects. Can't wait to share more details soon!",
-      timestamp: new Date(Date.now() - 86400000).toISOString(),
-      likes: 28,
-      comments: 7
-    },
-    {
-      id: 3,
-      content: "Beautiful sunset today! Sometimes you need to take a moment to appreciate the simple things in life. 🌅",
-      timestamp: new Date(Date.now() - 172800000).toISOString(),
-      likes: 42,
-      comments: 12
+  const handleUserData = async () => {
+    try {
+      setLoading(true);
+      const loginMethod = localStorage.getItem('loginMethod');
+      const token = localStorage.getItem('token');
+
+      // For Google login with session
+      if (loginMethod === 'google' && session?.user) {
+        setUserData({
+          firstName: session.user.name?.split(' ')[0] || '',
+          lastName: session.user.name?.split(' ').slice(1).join(' ') || '',
+          email: session.user.email,
+          username: session.user.email?.split('@')[0] || '',
+          profileImage: session.user.image,
+          loginMethod: 'google'
+        });
+      } 
+      // For manual login with token
+      else if (loginMethod === 'manual' && token) {
+        await fetchUserDataFromDB();
+      }
+      // Fallback: if we have a session but no loginMethod set (edge case)
+      else if (session?.user) {
+        setUserData({
+          firstName: session.user.name?.split(' ')[0] || '',
+          lastName: session.user.name?.split(' ').slice(1).join(' ') || '',
+          email: session.user.email,
+          username: session.user.email?.split('@')[0] || '',
+          profileImage: session.user.image,
+          loginMethod: 'google'
+        });
+      }
+      else {
+        throw new Error('No valid authentication found');
+      }
+    } catch (error) {
+      setError('Failed to load user data');
+      console.error('Error loading user data:', error);
+    } finally {
+      setLoading(false);
     }
-  ])
+  };
+
+  const fetchUserDataFromDB = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('No token found');
+      }
+
+      // Try different possible endpoints
+      const possibleEndpoints = [
+        'http://localhost:8080/api/user/profile',
+        'http://localhost:8080/api/profile',
+        'http://localhost:8080/api/user',
+        'http://localhost:8080/api/auth/profile'
+      ];
+
+      let response;
+      let lastError;
+
+      for (const endpoint of possibleEndpoints) {
+        try {
+          response = await fetch(endpoint, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            setUserData({
+              ...data.user || data,
+              loginMethod: 'manual'
+            });
+            return;
+          } else if (response.status !== 404) {
+            // If it's not a 404, it means the endpoint exists but there's another issue
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `HTTP ${response.status}`);
+          }
+        } catch (fetchError) {
+          if (!fetchError.message.includes('404')) {
+            lastError = fetchError;
+          }
+        }
+      }
+
+      // If we get here, none of the endpoints worked
+      throw new Error(lastError?.message || 'Profile endpoint not found. Please check your backend API.');
+
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
+  const fetchUserPosts = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      
+      if (!user.id) return;
+
+      const response = await fetch(`http://localhost:8080/api/posts?userId=${user.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const postsData = await response.json();
+        setPosts(postsData);
+      }
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    }
+  };
+
+  const handleEditProfile = () => {
+    setEditForm({
+      displayName: userData?.displayName || '',
+      bio: userData?.bio || '',
+      avatar: userData?.avatar || ''
+    });
+    setIsEditing(true);
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+      const response = await fetch(`http://localhost:8080/api/users/${user.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editForm),
+      });
+
+      if (response.ok) {
+        const updatedUser = await response.json();
+        setUserData({ ...userData, ...updatedUser });
+        setIsEditing(false);
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    }
+  };
+
+  const handleLogout = async () => {
+    const loginMethod = localStorage.getItem('loginMethod');
+    
+    // Clear localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('phoneVerified');
+    localStorage.removeItem('verifiedPhone');
+    localStorage.removeItem('loginMethod');
+    
+    // If logged in via Google, sign out from NextAuth
+    if (loginMethod === 'google' && session) {
+      await signOut({ callbackUrl: '/login' });
+    } else {
+      // For manual login, just redirect
+      router.push('/login');
+    }
+  };
 
   useEffect(() => {
-    if (status === 'loading') return
-    if (!session) {
-      router.push('/login')
-    }
-  }, [session, status, router])
+    if (status === 'loading') return;
 
-  if (status === 'loading') {
+    const token = localStorage.getItem('token');
+    const loginMethod = localStorage.getItem('loginMethod');
+
+    if (status === 'unauthenticated' && !token) {
+      router.push('/login');
+      return;
+    }
+
+    if (status === 'authenticated' || token) {
+      handleUserData();
+      fetchUserPosts();
+    }
+  }, [status, router]);
+
+  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-black text-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-500 mx-auto"></div>
-          <p className="mt-4">Loading...</p>
+      <div className="min-h-screen bg-black text-white">
+        <Navigation />
+        <div className="lg:ml-64">
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          </div>
         </div>
       </div>
-    )
+    );
   }
 
-  if (!session) return null
-
-  const handleSignOut = () => {
-    signOut({ callbackUrl: '/login' })
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black text-white">
+        <Navigation />
+        <div className="lg:ml-64">
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="bg-red-900/20 border border-red-700 rounded-lg p-4 mb-6 max-w-md">
+              <p className="text-red-300">{error}</p>
+            </div>
+            <button
+              onClick={handleUserData}
+              className="bg-blue-500 text-white px-6 py-2 rounded-full hover:bg-blue-600 transition-colors mr-4"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="bg-black text-white min-h-screen font-sans">
-      <div className="container mx-auto flex justify-center">
-        {/* Left Sidebar - simplified for profile page */}
-        <aside className="hidden md:flex flex-col md:w-20 lg:w-72 p-2">
-          <div className="p-3 mb-2">
-            <Icon d="M12 21a9 9 0 100-18 9 9 0 000 18z" className="w-8 h-8 text-violet-500" />
-          </div>
-          <nav className="flex flex-col space-y-1">
-            <Link href="/feed" className="flex items-center space-x-4 p-3 rounded-full text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
-              <Icon d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              <span className="text-xl lg:inline hidden">Home</span>
-            </Link>
-            <Link href="/profile" className="flex items-center space-x-4 p-3 rounded-full text-white font-bold transition-colors">
-              <Icon d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              <span className="text-xl lg:inline hidden">Profile</span>
-            </Link>
-          </nav>
-        </aside>
-
-        {/* Main Content */}
-        <main className="w-full md:max-w-2xl border-x border-gray-800 min-h-screen">
+    <div className="min-h-screen bg-black text-white">
+      <Navigation />
+      
+      <div className="lg:ml-64">
+        <div className="max-w-2xl mx-auto border-x border-gray-800 min-h-screen">
           {/* Header */}
-          <header className="sticky top-0 bg-black bg-opacity-70 backdrop-blur-md z-10 border-b border-gray-800 p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <button onClick={() => router.back()} className="p-2 hover:bg-gray-800 rounded-full">
-                  <Icon d="M15 19l-7-7 7-7" />
-                </button>
-                <div>
-                  <h1 className="text-xl font-bold">{session.user.name}</h1>
-                  <p className="text-sm text-gray-500">{postsCount} posts</p>
-                </div>
-              </div>
-              <Link href="/feed" className="bg-violet-500 text-white font-bold py-2 px-4 rounded-full hover:bg-violet-600 transition-colors">
-                Go to Feed
-              </Link>
+          <div className="sticky top-0 bg-black/80 backdrop-blur-md border-b border-gray-800 p-4 flex items-center space-x-4">
+            <button 
+              onClick={() => router.push('/feed')} 
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+            </button>
+            <div>
+              <h1 className="text-xl font-bold">
+                {userData?.displayName || userData?.firstName || userData?.username}
+              </h1>
+              <p className="text-sm text-gray-500">{posts.length} Posts</p>
             </div>
-          </header>
+          </div>
 
           {/* Profile Section */}
-          <div className="p-4">
-            {/* Cover Photo Placeholder */}
-            <div className="h-48 bg-gradient-to-r from-violet-900 to-purple-900 rounded-xl mb-4"></div>
-            
+          <div>
+            {/* Cover Image */}
+            <div className="h-48 bg-gradient-to-r from-blue-600 to-purple-600 relative">
+              <div className="absolute inset-0 bg-black/20"></div>
+            </div>
+
             {/* Profile Info */}
-            <div className="relative mb-6">
-              {/* Profile Picture */}
-              <div className="absolute -top-16 left-4">
+            <div className="px-4 pb-4">
+              <div className="flex justify-between items-start -mt-16 relative z-10">
+                {/* Profile Picture */}
                 <div className="relative">
-                  {session.user.image && !imageError ? (
-                    <Image
-                      src={session.user.image}
-                      alt={session.user.name}
-                      width={128}
-                      height={128}
-                      className="rounded-full border-4 border-black"
-                      onError={() => setImageError(true)}
+                  {userData?.profileImage || userData?.avatar ? (
+                    <img
+                      src={userData.profileImage || userData.avatar}
+                      alt="Profile"
+                      className="w-32 h-32 rounded-full border-4 border-black bg-gray-800"
                     />
                   ) : (
-                    <div className="w-32 h-32 bg-gray-700 rounded-full border-4 border-black flex items-center justify-center">
-                      <Icon d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" className="w-16 h-16 text-gray-400" />
+                    <div className="w-32 h-32 rounded-full border-4 border-black bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                      <span className="text-4xl font-bold text-white">
+                        {userData?.displayName?.[0] || userData?.firstName?.[0] || userData?.username?.[0] || '?'}
+                      </span>
                     </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="mt-16">
+                  {userData?.loginMethod === 'manual' && !isEditing && (
+                    <button
+                      onClick={handleEditProfile}
+                      className="border border-gray-600 text-white px-6 py-2 rounded-full font-medium hover:bg-gray-900 transition-colors"
+                    >
+                      Edit profile
+                    </button>
                   )}
                 </div>
               </div>
 
-              {/* Edit Profile Button */}
-              <div className="flex justify-end mb-4">
-                <button 
-                  onClick={handleSignOut}
-                  className="border border-gray-600 text-white font-bold py-2 px-4 rounded-full hover:bg-gray-800 transition-colors"
-                >
-                  Sign Out
-                </button>
-              </div>
-
-              {/* User Details */}
-              <div className="mt-16">
-                <h2 className="text-2xl font-bold">{session.user.name}</h2>
-                <p className="text-gray-500">@{session.user.username}</p>
-                <p className="text-gray-500 text-sm mt-1">
-                  Joined {new Date(session.user.joinedDate || new Date()).toLocaleDateString('en-US', { 
-                    month: 'long', 
-                    year: 'numeric' 
-                  })}
-                </p>
-                
-                {/* Bio */}
-                <p className="text-white mt-3">
-                  Welcome to my Entangl profile! Excited to be part of this amazing community. 
-                  Let's connect and share our experiences! ✨
-                </p>
-
-                {/* Stats */}
-                <div className="flex space-x-6 mt-4 text-sm">
-                  <button className="hover:underline">
-                    <span className="font-bold text-white">{followingCount}</span>
-                    <span className="text-gray-500 ml-1">Following</span>
-                  </button>
-                  <button className="hover:underline">
-                    <span className="font-bold text-white">{followersCount}</span>
-                    <span className="text-gray-500 ml-1">Followers</span>
-                  </button>
+              {/* Edit Profile Form */}
+              {isEditing && (
+                <div className="mt-6 bg-gray-900 rounded-lg p-4 border border-gray-700">
+                  <h3 className="text-lg font-semibold mb-4">Edit Profile</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-1">
+                        Display Name
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.displayName}
+                        onChange={(e) => setEditForm({...editForm, displayName: e.target.value})}
+                        className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-1">
+                        Bio
+                      </label>
+                      <textarea
+                        value={editForm.bio}
+                        onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
+                        rows={3}
+                        className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                        placeholder="Tell us about yourself"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400 mb-1">
+                        Avatar URL
+                      </label>
+                      <input
+                        type="url"
+                        value={editForm.avatar}
+                        onChange={(e) => setEditForm({...editForm, avatar: e.target.value})}
+                        className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="https://example.com/avatar.jpg"
+                      />
+                    </div>
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={handleSaveProfile}
+                        className="bg-blue-500 text-white px-6 py-2 rounded-full font-medium hover:bg-blue-600 transition-colors"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setIsEditing(false)}
+                        className="border border-gray-600 text-white px-6 py-2 rounded-full font-medium hover:bg-gray-900 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* User Info */}
+              {!isEditing && (
+                <div className="mt-4 space-y-3">
+                  <div>
+                    <h2 className="text-xl font-bold">
+                      {userData?.displayName || `${userData?.firstName} ${userData?.lastName}`.trim() || userData?.username}
+                    </h2>
+                    {userData?.username && (
+                      <p className="text-gray-500">@{userData.username}</p>
+                    )}
+                  </div>
+
+                  {userData?.bio && (
+                    <p className="text-white">{userData.bio}</p>
+                  )}
+
+                  <div className="flex items-center space-x-4 text-gray-500 text-sm">
+                    {userData?.loginMethod && (
+                      <div className="flex items-center space-x-1">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h3v-7h6v7h3a1 1 0 001-1V7l-7-5z" clipRule="evenodd" />
+                        </svg>
+                        <span>Signed in via {userData.loginMethod === 'google' ? 'Google' : 'Email'}</span>
+                      </div>
+                    )}
+                    {userData?.createdAt && (
+                      <div className="flex items-center space-x-1">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                        </svg>
+                        <span>Joined {new Date(userData.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex space-x-6">
+                    <span>
+                      <span className="font-bold text-white">0</span>
+                      <span className="text-gray-500 ml-1">Following</span>
+                    </span>
+                    <span>
+                      <span className="font-bold text-white">0</span>
+                      <span className="text-gray-500 ml-1">Followers</span>
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Tabs */}
-            <div className="border-b border-gray-800">
-              <nav className="flex">
-                {['posts', 'replies', 'media', 'likes'].map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`flex-1 text-center py-4 font-semibold capitalize relative ${
-                      activeTab === tab
-                        ? 'text-white'
-                        : 'text-gray-500 hover:text-gray-300'
-                    }`}
-                  >
-                    {tab}
-                    {activeTab === tab && (
-                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-14 h-1 bg-violet-500 rounded-full"></div>
-                    )}
-                  </button>
-                ))}
-              </nav>
+            <div className="border-t border-gray-800">
+              <div className="flex">
+                <button 
+                  onClick={() => setActiveTab('posts')}
+                  className={`flex-1 py-4 text-center font-medium transition-colors ${
+                    activeTab === 'posts' 
+                      ? 'border-b-2 border-blue-500 text-white' 
+                      : 'text-gray-500 hover:text-gray-300'
+                  }`}
+                >
+                  Posts
+                </button>
+                <button 
+                  onClick={() => setActiveTab('replies')}
+                  className={`flex-1 py-4 text-center font-medium transition-colors ${
+                    activeTab === 'replies' 
+                      ? 'border-b-2 border-blue-500 text-white' 
+                      : 'text-gray-500 hover:text-gray-300'
+                  }`}
+                >
+                  Replies
+                </button>
+                <button 
+                  onClick={() => setActiveTab('media')}
+                  className={`flex-1 py-4 text-center font-medium transition-colors ${
+                    activeTab === 'media' 
+                      ? 'border-b-2 border-blue-500 text-white' 
+                      : 'text-gray-500 hover:text-gray-300'
+                  }`}
+                >
+                  Media
+                </button>
+                <button 
+                  onClick={() => setActiveTab('likes')}
+                  className={`flex-1 py-4 text-center font-medium transition-colors ${
+                    activeTab === 'likes' 
+                      ? 'border-b-2 border-blue-500 text-white' 
+                      : 'text-gray-500 hover:text-gray-300'
+                  }`}
+                >
+                  Likes
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div>
+              {activeTab === 'posts' && (
+                <>
+                  {posts.length === 0 ? (
+                    <div className="text-center py-12 px-4">
+                      <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-2xl font-bold mb-2">You haven't posted anything yet</h3>
+                      <p className="text-gray-500 mb-4">When you post something, it'll show up here.</p>
+                      <button 
+                        onClick={() => router.push('/feed')}
+                        className="bg-blue-500 text-white px-6 py-2 rounded-full font-medium hover:bg-blue-600 transition-colors"
+                      >
+                        Post something
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      {posts.map(post => (
+                        <PostCard
+                          key={post.id}
+                          post={post}
+                          currentUserId={userData?.id}
+                          onDelete={(postId) => setPosts(prev => prev.filter(p => p.id !== postId))}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {activeTab !== 'posts' && (
+                <div className="text-center py-12 px-4">
+                  <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Nothing to see here — yet</h3>
+                  <p className="text-gray-500">
+                    {activeTab === 'replies' && "When you reply to someone, it'll show up here."}
+                    {activeTab === 'media' && "When you post photos or videos, they'll show up here."}
+                    {activeTab === 'likes' && "When you like a post, it'll show up here."}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
-
-          {/* Posts Section */}
-          <div>
-            {activeTab === 'posts' && (
-              <div>
-                {userPosts.map((post) => (
-                  <ProfilePost
-                    key={post.id}
-                    content={post.content}
-                    timestamp={post.timestamp}
-                    likes={post.likes}
-                    comments={post.comments}
-                  />
-                ))}
-              </div>
-            )}
-            {activeTab === 'replies' && (
-              <div className="text-center text-gray-500 py-16">
-                <p>No replies yet</p>
-              </div>
-            )}
-            {activeTab === 'media' && (
-              <div className="text-center text-gray-500 py-16">
-                <p>No media yet</p>
-              </div>
-            )}
-            {activeTab === 'likes' && (
-              <div className="text-center text-gray-500 py-16">
-                <p>No likes yet</p>
-              </div>
-            )}
-          </div>
-        </main>
-
-        {/* Right Sidebar - simplified for profile */}
-        <aside className="hidden lg:block w-96 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
-            <h3 className="font-bold text-lg mb-3">User Info</h3>
-            <div className="space-y-2 text-sm">
-              <p><span className="text-gray-500">Email:</span> {session.user.email}</p>
-              <p><span className="text-gray-500">Member since:</span> {new Date(session.user.joinedDate || new Date()).toLocaleDateString()}</p>
-              <p><span className="text-gray-500">Posts:</span> {postsCount}</p>
-              <p><span className="text-gray-500">Followers:</span> {followersCount}</p>
-              <p><span className="text-gray-500">Following:</span> {followingCount}</p>
-            </div>
-          </div>
-        </aside>
+        </div>
       </div>
 
-      {/* Bottom Navigation for Mobile */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-black border-t border-gray-800 flex justify-around p-1 z-20">
-        <Link href="/feed" className="p-2 text-gray-400 hover:text-white">
-          <Icon d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-        </Link>
-        <Link href="/profile" className="p-2 text-violet-400">
-          <Icon d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </Link>
-      </nav>
+      {/* Mobile bottom navigation spacing */}
+      <div className="h-16 lg:hidden"></div>
     </div>
-  )
+  );
 }

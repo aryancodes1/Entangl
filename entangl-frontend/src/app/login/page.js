@@ -10,11 +10,20 @@ export default function LogIn() {
   const router = useRouter();
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
   const [verifiedPhone, setVerifiedPhone] = useState(null);
+  const [formData, setFormData] = useState({
+    identifier: '',
+    password: ''
+  });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const checkSession = async () => {
       const session = await getSession();
-      if (session) {
+      const token = localStorage.getItem('token');
+      
+      // If user is already authenticated via session or token, redirect to profile
+      if (session || token) {
         router.push('/profile');
       }
     };
@@ -28,6 +37,74 @@ export default function LogIn() {
     }
   }, [router]);
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleManualLogin = async (e) => {
+    e.preventDefault();
+    
+    // Check if phone is verified
+    const phoneVerified = localStorage.getItem('phoneVerified');
+    if (phoneVerified !== 'true') {
+      setShowPhoneVerification(true);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('http://localhost:8080/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      // Check if the response is actually JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server returned non-JSON response. Please check if the backend is running.');
+      }
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Store token and redirect
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('loginMethod', 'manual');
+        
+        router.push('/profile');
+      } else {
+        setErrors({ general: data.error || 'Login failed' });
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      if (error.message.includes('non-JSON response')) {
+        setErrors({ general: 'Backend server is not responding correctly. Please check if the server is running on http://localhost:8080' });
+      } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        setErrors({ general: 'Cannot connect to server. Please check if the backend is running on http://localhost:8080' });
+      } else if (error.message.includes('404')) {
+        setErrors({ general: 'Login endpoint not found. Please verify your backend API endpoints.' });
+      } else if (error.name === 'TypeError' && (error.message.includes('CORS') || error.message.includes('blocked'))) {
+        setErrors({ general: 'CORS error: Backend server needs to allow requests from this domain. Check your backend CORS configuration.' });
+      } else if (error.message.includes('CORB') || error.message.includes('Cross-Origin')) {
+        setErrors({ general: 'Cross-origin request blocked. Please configure CORS on your backend server.' });
+      } else {
+        setErrors({ general: 'Login failed. Please try again. If the issue persists, check if your backend server is configured correctly.' });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGoogleSignIn = () => {
     // Check if phone is verified
     const phoneVerified = localStorage.getItem('phoneVerified');
@@ -36,6 +113,7 @@ export default function LogIn() {
       return;
     }
     
+    localStorage.setItem('loginMethod', 'google');
     signIn('google', { callbackUrl: '/profile' });
   };
 
@@ -43,25 +121,12 @@ export default function LogIn() {
     setVerifiedPhone(phoneNumber);
     setShowPhoneVerification(false);
     // Automatically proceed to Google sign in after phone verification
+    localStorage.setItem('loginMethod', 'google'); // Flag for Google login
     signIn('google', { callbackUrl: '/profile' });
   };
 
   const handleBackToLogin = () => {
     setShowPhoneVerification(false);
-  };
-
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
-    
-    // Check if phone is verified before allowing form login
-    const phoneVerified = localStorage.getItem('phoneVerified');
-    if (phoneVerified !== 'true') {
-      setShowPhoneVerification(true);
-      return;
-    }
-    
-    // Handle form-based login here (if you implement it later)
-    alert('Form login requires phone verification first');
   };
 
   if (showPhoneVerification) {
@@ -109,25 +174,39 @@ export default function LogIn() {
             <div className="h-px bg-gray-700 w-full"></div>
           </div>
 
-          <form onSubmit={handleFormSubmit} className="space-y-4 text-left">
+          {errors.general && (
+            <div className="bg-red-900 border border-red-700 rounded-md p-3 text-sm">
+              <p className="text-red-300">{errors.general}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleManualLogin} className="space-y-4 text-left">
             <input
               type="text"
+              name="identifier"
               placeholder="Username or email"
+              value={formData.identifier}
+              onChange={handleInputChange}
               className="w-full px-4 py-3 border border-gray-700 rounded-md bg-black text-white placeholder-gray-500 focus:outline-none focus:border-violet-500"
               disabled={!verifiedPhone}
+              required
             />
             <input
               type="password"
+              name="password"
               placeholder="Password"
+              value={formData.password}
+              onChange={handleInputChange}
               className="w-full px-4 py-3 border border-gray-700 rounded-md bg-black text-white placeholder-gray-500 focus:outline-none focus:border-violet-500"
               disabled={!verifiedPhone}
+              required
             />
             <button
               type="submit"
-              disabled={!verifiedPhone}
+              disabled={!verifiedPhone || loading}
               className="w-full bg-violet-500 text-white font-bold py-2.5 rounded-full hover:bg-violet-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {verifiedPhone ? 'Log in' : 'Verify Phone First'}
+              {loading ? 'Signing in...' : (verifiedPhone ? 'Log in' : 'Verify Phone First')}
             </button>
             <div className="text-center pt-2">
                 <Link href="/password-reset" className="text-sm text-violet-400 hover:underline">
@@ -160,3 +239,4 @@ export default function LogIn() {
     </div>
   );
 }
+
