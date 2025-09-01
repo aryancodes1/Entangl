@@ -15,30 +15,64 @@ const handler = NextAuth({
       session.user.joinedDate = token.joinedDate
       session.user.phoneVerified = token.phoneVerified
       session.user.verifiedPhone = token.verifiedPhone
+      session.user.dbToken = token.dbToken // Add database token
       return session
     },
     async jwt({ token, user, account }) {
-      if (user) {
-        token.sub = user.id
-        token.username = user.email?.split('@')[0]
-        token.joinedDate = new Date().toISOString()
-        
-        // Check if phone was verified (from localStorage - will be passed during sign in)
-        if (typeof window !== 'undefined') {
-          token.phoneVerified = localStorage.getItem('phoneVerified') === 'true'
-          token.verifiedPhone = localStorage.getItem('verifiedPhone')
+      if (user && account?.provider === 'google') {
+        // Store Google user in our database
+        try {
+          const response = await fetch('http://localhost:8080/api/auth/google-signin', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: user.email,
+              name: user.name,
+              image: user.image,
+              googleId: user.id
+            }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            token.dbToken = data.token; // Store our database token
+            token.dbUser = data.user;
+            token.sub = data.user.id; // Use our database user ID
+            token.username = data.user.username;
+            console.log('Google user stored in database:', data.user.username);
+          } else {
+            console.error('Failed to store Google user in database');
+          }
+        } catch (error) {
+          console.error('Error storing Google user:', error);
         }
+        
+        token.joinedDate = new Date().toISOString();
       }
       return token
     },
     async signIn({ user, account, profile }) {
-      // In production, you might want to check phone verification status from database
       return true
+    },
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      if (new URL(url).origin === baseUrl) return url
+      return baseUrl
     }
   },
   pages: {
     signIn: '/login',
-  }
+    signOut: '/login',
+    error: '/login'
+  },
+  session: {
+    strategy: 'jwt',
+    maxAge: 7 * 24 * 60 * 60, // 7 days
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === 'development'
 })
 
 export { handler as GET, handler as POST }

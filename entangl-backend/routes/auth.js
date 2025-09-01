@@ -203,4 +203,85 @@ router.put('/profile', authenticateToken, async (req, res) => {
   }
 });
 
+// POST /api/auth/google-signin - Handle Google sign-in users
+router.post('/google-signin', async (req, res) => {
+  try {
+    const { email, name, image, googleId } = req.body;
+
+    if (!email || !name) {
+      return res.status(400).json({ error: 'Email and name are required' });
+    }
+
+    // Check if user already exists
+    let user = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (!user) {
+      // Create new user for Google sign-in
+      const username = email.split('@')[0] + '_' + Math.random().toString(36).substr(2, 4);
+      
+      user = await prisma.user.create({
+        data: {
+          email,
+          username,
+          displayName: name,
+          avatar: image,
+          verified: true, // Google users are considered verified
+          // No password for Google users
+        },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          displayName: true,
+          bio: true,
+          avatar: true,
+          phone: true,
+          verified: true,
+          createdAt: true
+        }
+      });
+
+      console.log('Created new Google user:', user.username);
+    } else {
+      // Update existing user's avatar if provided
+      if (image && user.avatar !== image) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { avatar: image },
+          select: {
+            id: true,
+            email: true,
+            username: true,
+            displayName: true,
+            bio: true,
+            avatar: true,
+            phone: true,
+            verified: true,
+            createdAt: true
+          }
+        });
+      }
+      console.log('Updated existing Google user:', user.username);
+    }
+
+    // Generate JWT token for Google user
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      message: 'Google sign-in successful',
+      user,
+      token
+    });
+  } catch (error) {
+    console.error('Google sign-in error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

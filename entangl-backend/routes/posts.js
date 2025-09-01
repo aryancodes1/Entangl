@@ -2,18 +2,76 @@ const express = require('express');
 const prisma = require('../lib/prisma');
 const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
 
-// GET all posts with pagination and user feed
-router.get('/', authenticateToken, async (req, res) => {
+// Middleware to handle optional authentication
+const optionalAuth = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10, userId } = req.query;
-    const skip = (page - 1) * limit;
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
 
-    let whereClause = {};
+    if (token) {
+      // If token is provided, verify it
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+      
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.userId },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          displayName: true,
+          bio: true,
+          avatar: true,
+          phone: true,
+          verified: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      });
+
+      if (user) {
+        req.user = user;
+      }
+    }
     
-    // If userId is provided, get posts from that user
-    if (userId) {
-      whereClause.authorId = userId;
+    next();
+  } catch (error) {
+    // For optional auth, we don't fail on token errors
+    console.log('Optional auth failed:', error.message);
+    next();
+  }
+};
+
+// GET user feed (posts from followed users) with pagination
+router.get('/feed', optionalAuth, async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // If no user authenticated, return public posts
+    if (!req.user) {
+      return res.redirect(`/api/posts?page=${page}&limit=${limit}`);
+    }
+
+    // Get users that current user follows
+    const following = await prisma.follow.findMany({
+      where: { followerId: req.user.id },
+      select: { followingId: true }
+    });
+
+    const followingIds = following.map(f => f.followingId);
+    
+    // Include own posts and posts from followed users
+    followingIds.push(req.user.id);
+    
+    let whereClause = {};
+    if (followingIds.length > 0) {
+      whereClause = {
+        authorId: {
+          in: followingIds
+        }
+      };
     }
 
     const posts = await prisma.post.findMany({
@@ -33,11 +91,6 @@ router.get('/', authenticateToken, async (req, res) => {
             userId: true
           }
         },
-        comments: {
-          select: {
-            id: true
-          }
-        },
         _count: {
           select: {
             likes: true,
@@ -52,7 +105,6 @@ router.get('/', authenticateToken, async (req, res) => {
       take: parseInt(limit)
     });
 
-    // Add isLiked flag for current user
     const postsWithLikeStatus = posts.map(post => ({
       ...post,
       isLiked: post.likes.some(like => like.userId === req.user.id),
@@ -62,31 +114,24 @@ router.get('/', authenticateToken, async (req, res) => {
 
     res.json(postsWithLikeStatus);
   } catch (error) {
+    console.error('Error fetching feed:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// GET user feed (posts from followed users)
-router.get('/feed', authenticateToken, async (req, res) => {
+// GET all posts with optional authentication
+router.get('/', optionalAuth, async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const skip = (page - 1) * limit;
+    const { page = 1, limit = 10, userId } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    // Get users that current user follows
-    const following = await prisma.follow.findMany({
-      where: { followerId: req.user.id },
-      select: { followingId: true }
-    });
-
-    const followingIds = following.map(f => f.followingId);
-    followingIds.push(req.user.id); // Include own posts
+    let whereClause = {};
+    if (userId) {
+      whereClause = { authorId: userId };
+    }
 
     const posts = await prisma.post.findMany({
-      where: {
-        authorId: {
-          in: followingIds
-        }
-      },
+      where: whereClause,
       include: {
         author: {
           select: {
@@ -118,13 +163,14 @@ router.get('/feed', authenticateToken, async (req, res) => {
 
     const postsWithLikeStatus = posts.map(post => ({
       ...post,
-      isLiked: post.likes.some(like => like.userId === req.user.id),
+      isLiked: req.user ? post.likes.some(like => like.userId === req.user.id) : false,
       likes: post._count.likes,
       comments: post._count.comments
     }));
 
     res.json(postsWithLikeStatus);
   } catch (error) {
+    console.error('Error fetching posts:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -134,14 +180,28 @@ router.post('/', authenticateToken, async (req, res) => {
   try {
     const { content, imageUrl } = req.body;
     
+    console.log('Creating post with data:', { content, imageUrl, userId: req.user.id });
+    
+    // Allow posts with either content or image (or both)
     if (!content && !imageUrl) {
-      return res.status(400).json({ error: 'Post must have content or image' });
+      return res.status(400).json({ 
+        error: 'Post must have content or image',
+        details: 'Please provide either text content or an image for your post'
+      });
+    }
+
+    // Validate content length if provided
+    if (content && content.length > 280) {
+      return res.status(400).json({ 
+        error: 'Content too long',
+        details: 'Posts must be 280 characters or less'
+      });
     }
 
     const post = await prisma.post.create({
       data: {
-        content,
-        imageUrl,
+        content: content || null, // Allow null content if there's an image
+        imageUrl: imageUrl || null,
         authorId: req.user.id
       },
       include: {
@@ -163,14 +223,37 @@ router.post('/', authenticateToken, async (req, res) => {
       }
     });
 
+    console.log('Post created successfully:', post.id);
+
     res.status(201).json({
       ...post,
       isLiked: false,
-      likes: 0,
-      comments: 0
+      likes: post._count.likes,
+      comments: post._count.comments
     });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error('Error creating post:', error);
+    
+    // Handle Prisma-specific errors
+    if (error.code === 'P2002') {
+      return res.status(400).json({ 
+        error: 'Duplicate post detected',
+        details: 'This post already exists'
+      });
+    }
+    
+    if (error.code === 'P2025') {
+      return res.status(404).json({ 
+        error: 'User not found',
+        details: 'The user account associated with this post could not be found'
+      });
+    }
+
+    // Generic error response
+    res.status(500).json({ 
+      error: 'Failed to create post',
+      details: error.message || 'An unexpected error occurred while creating your post'
+    });
   }
 });
 
@@ -293,3 +376,4 @@ router.post('/:id/like', authenticateToken, async (req, res) => {
 });
 
 module.exports = router;
+

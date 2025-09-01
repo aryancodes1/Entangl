@@ -9,7 +9,17 @@ export default function PhoneVerification({ onVerificationComplete, onBack, cont
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
-  const [devOtp, setDevOtp] = useState(''); // For development mode
+
+  // Helper functions defined early
+  const handlePhoneSubmit = (e) => {
+    e.preventDefault();
+    sendOTP();
+  };
+
+  const handleOtpSubmit = (e) => {
+    e.preventDefault();
+    verifyOTP();
+  };
 
   const sendOTP = async () => {
     if (!phoneNumber || phoneNumber.replace(/\D/g, '').length < 10) {
@@ -19,9 +29,10 @@ export default function PhoneVerification({ onVerificationComplete, onBack, cont
 
     setLoading(true);
     setError('');
-    setDevOtp('');
 
     try {
+      console.log('Sending OTP to:', phoneNumber);
+      
       const response = await fetch('/api/auth/send-otp', {
         method: 'POST',
         headers: {
@@ -31,15 +42,11 @@ export default function PhoneVerification({ onVerificationComplete, onBack, cont
       });
 
       const data = await response.json();
+      console.log('Send OTP response:', data);
 
       if (response.ok) {
         setStep('otp');
         setPhoneNumber(data.phoneNumber || phoneNumber); // Use formatted phone number
-        
-        // Show OTP in development mode
-        if (data.otp) {
-          setDevOtp(data.otp);
-        }
         
         setResendCooldown(60);
         const interval = setInterval(() => {
@@ -51,11 +58,21 @@ export default function PhoneVerification({ onVerificationComplete, onBack, cont
             return prev - 1;
           });
         }, 1000);
+        
+        // Success message
+        alert('OTP sent successfully! Check your phone for the verification code.');
       } else {
+        console.error('Send OTP failed:', data);
         setError(data.error || 'Failed to send OTP');
+        
+        // Show more specific error for Twilio issues
+        if (data.code) {
+          setError(`${data.error} (Code: ${data.code})`);
+        }
       }
     } catch (error) {
-      setError('Network error. Please try again.');
+      console.error('Network error:', error);
+      setError('Network error. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -71,6 +88,8 @@ export default function PhoneVerification({ onVerificationComplete, onBack, cont
     setError('');
 
     try {
+      console.log('Verifying OTP:', otp, 'for phone:', phoneNumber);
+      
       const response = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: {
@@ -80,30 +99,25 @@ export default function PhoneVerification({ onVerificationComplete, onBack, cont
       });
 
       const data = await response.json();
+      console.log('Verify OTP response:', data);
 
       if (response.ok) {
         // Store verification status in localStorage
         localStorage.setItem('phoneVerified', 'true');
         localStorage.setItem('verifiedPhone', data.phoneNumber || phoneNumber);
+        
+        alert('Phone number verified successfully!');
         onVerificationComplete(data.phoneNumber || phoneNumber);
       } else {
+        console.error('Verify OTP failed:', data);
         setError(data.error || 'Invalid OTP');
       }
     } catch (error) {
+      console.error('Network error:', error);
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handlePhoneSubmit = (e) => {
-    e.preventDefault();
-    sendOTP();
-  };
-
-  const handleOtpSubmit = (e) => {
-    e.preventDefault();
-    verifyOTP();
   };
 
   if (step === 'phone') {
@@ -128,7 +142,11 @@ export default function PhoneVerification({ onVerificationComplete, onBack, cont
             className="w-full px-4 py-3 border border-gray-700 rounded-md bg-black text-white placeholder-gray-500 focus:outline-none focus:border-violet-500"
             required
           />
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && (
+            <div className="bg-red-900/20 border border-red-700 rounded-md p-3">
+              <p className="text-red-300 text-sm">{error}</p>
+            </div>
+          )}
           <button
             type="submit"
             disabled={loading}
@@ -153,13 +171,8 @@ export default function PhoneVerification({ onVerificationComplete, onBack, cont
       <div>
         <h1 className="text-4xl font-bold">Enter verification code</h1>
         <p className="text-gray-400 mt-2">We sent a code to {phoneNumber}</p>
+        <p className="text-gray-500 text-sm mt-1">Code expires in 10 minutes</p>
       </div>
-      
-      {devOtp && (
-        <div className="bg-yellow-900 border border-yellow-700 rounded-md p-3 text-sm">
-          <p className="text-yellow-300">Development Mode - Your OTP: <strong>{devOtp}</strong></p>
-        </div>
-      )}
       
       <form onSubmit={handleOtpSubmit} className="space-y-4 text-left">
         <input
@@ -171,7 +184,11 @@ export default function PhoneVerification({ onVerificationComplete, onBack, cont
           maxLength={6}
           required
         />
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {error && (
+          <div className="bg-red-900/20 border border-red-700 rounded-md p-3">
+            <p className="text-red-300 text-sm">{error}</p>
+          </div>
+        )}
         <button
           type="submit"
           disabled={loading}

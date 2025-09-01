@@ -35,24 +35,9 @@ export default function CreatePost({ onPostCreated }) {
   };
 
   const uploadImageToCloudinary = async (file) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', 'entangl_posts'); // You'll need to create this in Cloudinary
-    
-    try {
-      const response = await fetch('https://api.cloudinary.com/v1_1/your-cloud-name/image/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        return data.secure_url;
-      }
-    } catch (error) {
-      console.error('Error uploading image:', error);
-    }
-    return null;
+    // For now, create a local object URL for testing
+    // In production, you would upload to Cloudinary or another service
+    return URL.createObjectURL(file);
   };
 
   const handleSubmit = async (e) => {
@@ -71,18 +56,48 @@ export default function CreatePost({ onPostCreated }) {
         imageUrl = await uploadImageToCloudinary(imageFile);
       }
 
-      const token = localStorage.getItem('token');
+      // Check authentication - try to get token first
+      let token = localStorage.getItem('token');
+      const loginMethod = localStorage.getItem('loginMethod');
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      
+      console.log('Post creation auth check:', { 
+        hasToken: !!token, 
+        loginMethod, 
+        hasUserData: !!userData.id 
+      });
+
+      // All users now need a token (stored from database)
+      if (!token) {
+        alert('Please log in to create a post');
+        setLoading(false);
+        return;
+      }
+
+      // Ensure we have user data
+      if (!userData.id) {
+        alert('User data not found. Please log in again.');
+        setLoading(false);
+        return;
+      }
+
+      const postData = {
+        content: content.trim() || null,
+        imageUrl: imageUrl
+      };
+
+      console.log('Sending post data:', postData);
+
       const response = await fetch('http://localhost:8080/api/posts', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          content: content.trim(),
-          imageUrl: imageUrl
-        }),
+        body: JSON.stringify(postData),
       });
+
+      console.log('Response status:', response.status);
 
       if (response.ok) {
         const newPost = await response.json();
@@ -93,9 +108,31 @@ export default function CreatePost({ onPostCreated }) {
           fileInputRef.current.value = '';
         }
         onPostCreated?.(newPost);
+      } else {
+        let errorMessage = 'Unknown error';
+        try {
+          const errorData = await response.json();
+          console.error('Error creating post:', errorData);
+          
+          // Handle authentication errors specifically
+          if (response.status === 401 || response.status === 403) {
+            errorMessage = 'Please log in again to create posts';
+            // Clear invalid auth data
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+          } else {
+            errorMessage = errorData.error || errorData.message || `HTTP ${response.status}`;
+          }
+        } catch (parseError) {
+          console.error('Could not parse error response:', parseError);
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        alert('Error creating post: ' + errorMessage);
       }
     } catch (error) {
-      console.error('Error creating post:', error);
+      console.error('Network error creating post:', error);
+      alert('Network error creating post. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }

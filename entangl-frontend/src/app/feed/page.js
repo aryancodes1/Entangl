@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Navigation from '../../components/Navigation';
@@ -13,65 +13,187 @@ export default function Feed() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const loginMethod = localStorage.getItem('loginMethod');
-
-    if (status === 'unauthenticated' && !token) {
-      router.push('/login');
-      return;
-    }
-
-    // Set current user ID
-    if (loginMethod === 'google' && session?.user) {
-      setCurrentUserId(session.user.id);
-    } else if (token) {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      setCurrentUserId(user.id);
-    }
-
-    fetchPosts();
-  }, [status, session, router]);
-
-  const fetchPosts = async () => {
+  // Define fetchPosts before useEffect
+  const fetchPosts = useCallback(async (pageNum = 1, reset = false) => {
     try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      
-      if (!token) return;
+      if (pageNum === 1) setLoading(true);
+      else setLoadingMore(true);
 
-      const response = await fetch('http://localhost:8080/api/posts/feed', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+      const token = localStorage.getItem('token');
+      const loginMethod = localStorage.getItem('loginMethod');
+      
+      console.log('fetchPosts called:', { hasToken: !!token, loginMethod, hasSession: !!session });
+
+      // For Google login, we might not have a token but we have session
+      if (!token && loginMethod === 'google' && !session) {
+        console.log('Google login but no session available yet');
+        setLoading(false);
+        setLoadingMore(false);
+        return;
+      }
+
+      // If manual login but no token, can't proceed
+      if (!token && loginMethod === 'manual') {
+        console.log('Manual login but no token found');
+        setLoading(false);
+        setLoadingMore(false);
+        return;
+      }
+
+      const headers = {};
+      
+      // Add Authorization header only if we have a token
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`http://localhost:8080/api/posts/feed?page=${pageNum}&limit=10`, {
+        headers,
       });
 
       if (response.ok) {
         const data = await response.json();
-        setPosts(data);
+        
+        if (reset || pageNum === 1) {
+          setPosts(data);
+        } else {
+          setPosts(prev => [...prev, ...data]);
+        }
+        
+        setHasMore(data.length === 10);
+        setPage(pageNum);
+      } else {
+        console.error('Failed to fetch posts:', response.status);
+        // Fallback to all posts if feed fails
+        const fallbackResponse = await fetch(`http://localhost:8080/api/posts?page=${pageNum}&limit=10`, {
+          headers,
+        });
+        if (fallbackResponse.ok) {
+          const fallbackData = await fallbackResponse.json();
+          
+          if (reset || pageNum === 1) {
+            setPosts(fallbackData);
+          } else {
+            setPosts(prev => [...prev, ...fallbackData]);
+          }
+          
+          setHasMore(fallbackData.length === 10);
+          setPage(pageNum);
+        }
       }
     } catch (error) {
       console.error('Error fetching posts:', error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  };
+  }, [session]);
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem('token');
+      const loginMethod = localStorage.getItem('loginMethod');
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      
+      console.log('Feed auth check:', { 
+        hasToken: !!token, 
+        loginMethod, 
+        hasUserData: !!userData.id,
+        sessionStatus: status,
+        hasSession: !!session 
+      });
+
+      // For Google login, store user data and token from session
+      if (loginMethod === 'google' && session?.user && !token) {
+        if (session.user.dbToken && session.user.id) {
+          console.log('Storing Google user data in localStorage');
+          localStorage.setItem('token', session.user.dbToken);
+          localStorage.setItem('user', JSON.stringify({
+            id: session.user.id,
+            email: session.user.email,
+            username: session.user.username,
+            displayName: session.user.name,
+            avatar: session.user.image,
+            verified: true
+          }));
+          
+          // Refresh to use the new token
+          window.location.reload();
+          return;
+        }
+      }
+
+      // Check authentication by any method
+      const isAuthenticated = (
+        (loginMethod === 'manual' && token && userData.id) ||
+        (loginMethod === 'google' && session && status === 'authenticated') ||
+        (status === 'authenticated' && session)
+      );
+
+      if (status === 'loading') {
+        console.log('Session loading, waiting...');
+        return;
+      }
+
+      if (!isAuthenticated) {
+        console.log('Not authenticated, redirecting to login');
+        router.push('/login');
+        return;
+      }
+
+      // Set current user ID for posts
+      if (userData.id) {
+        setCurrentUserId(userData.id);
+      } else if (session?.user?.id) {
+        setCurrentUserId(session.user.id);
+      }
+
+      // Fetch posts
+      fetchPosts(1, true);
+    };
+
+    checkAuth();
+  }, [status, session, router, fetchPosts]);
 
   const handlePostCreated = (newPost) => {
-    setPosts(prev => [newPost, ...prev]);
+    setPosts((prev) => [newPost, ...prev]);
   };
 
   const handlePostDeleted = (postId) => {
-    setPosts(prev => prev.filter(post => post.id !== postId));
+    setPosts((prev) => prev.filter((post) => post.id !== postId));
   };
+
+  const loadMore = () => {
+    if (hasMore && !loadingMore) {
+      fetchPosts(page + 1);
+    }
+  };
+
+  // Infinite scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerHeight + document.documentElement.scrollTop 
+          >= document.documentElement.offsetHeight - 1000) {
+        loadMore();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [page, hasMore, loadingMore, loadMore]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white">
+      <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white">
         <Navigation />
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-500"></div>
+        <div className="lg:ml-64">
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          </div>
         </div>
       </div>
     );
@@ -81,7 +203,6 @@ export default function Feed() {
     <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white">
       <Navigation />
       
-      {/* Main Content with proper spacing for sidebar */}
       <div className="lg:ml-64">
         <div className="max-w-2xl mx-auto border-x border-gray-200 dark:border-gray-800 min-h-screen">
           {/* Header */}
@@ -90,9 +211,8 @@ export default function Feed() {
               <h1 className="text-xl font-bold">Home</h1>
             </div>
             
-            {/* Tab switcher for "For you" and "Following" */}
-            <div className="flex">
-              <button className="flex-1 text-center py-4 font-medium border-b-2 border-blue-500 text-black dark:text-white">
+            <div className="flex border-b border-gray-200 dark:border-gray-800">
+              <button className="flex-1 text-center py-4 font-medium text-black dark:text-white border-b-2 border-blue-500">
                 For you
               </button>
               <button className="flex-1 text-center py-4 font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
@@ -101,41 +221,59 @@ export default function Feed() {
             </div>
           </div>
 
+          {/* Create Post */}
           <CreatePost onPostCreated={handlePostCreated} />
-          
-          {posts.length === 0 ? (
-            <div className="text-center py-12 px-4">
-              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
+
+          {/* Posts Feed with Infinite Scroll */}
+          <div>
+            {posts.length === 0 && !loading ? (
+              <div className="text-center py-12 px-4">
+                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </div>
+                <h3 className="text-3xl font-bold mb-2">Welcome to Entangl!</h3>
+                <p className="text-gray-500 mb-6 text-lg">This is the best place to see what's happening in your world.</p>
+                <button
+                  onClick={() => router.push('/explore')}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-full font-bold text-lg transition-colors"
+                >
+                  Find people to follow
+                </button>
               </div>
-              <h3 className="text-3xl font-bold mb-2">Welcome to Entangl!</h3>
-              <p className="text-gray-500 mb-6 text-lg">This is the best place to see what's happening in your world.</p>
-              <button
-                onClick={() => router.push('/explore')}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-full font-bold text-lg transition-colors"
-              >
-                Find people to follow
-              </button>
-            </div>
-          ) : (
-            <div>
-              {posts.map(post => (
-                <PostCard
-                  key={post.id}
-                  post={post}
-                  currentUserId={currentUserId}
-                  onDelete={handlePostDeleted}
-                  onComment={() => {}}
-                />
-              ))}
-            </div>
-          )}
+            ) : (
+              <>
+                {posts.map((post) => (
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    currentUserId={currentUserId}
+                    onDelete={handlePostDeleted}
+                    onComment={() => {}}
+                  />
+                ))}
+                
+                {/* Loading More Indicator */}
+                {loadingMore && (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  </div>
+                )}
+                
+                {/* End of Posts Indicator */}
+                {!hasMore && posts.length > 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>You've seen all the latest posts!</p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Add spacing for mobile bottom nav */}
+      {/* Mobile bottom navigation spacing */}
       <div className="h-16 lg:hidden"></div>
     </div>
   );

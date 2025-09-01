@@ -11,6 +11,7 @@ export default function Explore() {
   const router = useRouter();
   const [posts, setPosts] = useState([]);
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('posts');
   const [currentUserId, setCurrentUserId] = useState(null);
@@ -24,12 +25,12 @@ export default function Explore() {
       return;
     }
 
-    // Set current user ID
-    if (loginMethod === 'google' && session?.user) {
+    // Set current user ID from stored user data
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    if (userData.id) {
+      setCurrentUserId(userData.id);
+    } else if (loginMethod === 'google' && session?.user?.id) {
       setCurrentUserId(session.user.id);
-    } else if (token) {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      setCurrentUserId(user.id);
     }
 
     fetchData();
@@ -40,20 +41,23 @@ export default function Explore() {
       setLoading(true);
       const token = localStorage.getItem('token');
       
-      if (!token) return;
+      if (!token) {
+        console.log('No token found for explore');
+        return;
+      }
+
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+      };
 
       // Fetch all posts
       const postsResponse = await fetch('http://localhost:8080/api/posts', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        headers,
       });
 
       // Fetch all users
       const usersResponse = await fetch('http://localhost:8080/api/users', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        headers,
       });
 
       if (postsResponse.ok) {
@@ -64,6 +68,7 @@ export default function Explore() {
       if (usersResponse.ok) {
         const usersData = await usersResponse.json();
         setUsers(usersData.filter(user => user.id !== currentUserId));
+        setFilteredUsers(usersData.filter(user => user.id !== currentUserId));
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -75,6 +80,12 @@ export default function Explore() {
   const handleFollow = async (userId) => {
     try {
       const token = localStorage.getItem('token');
+      
+      if (!token) {
+        alert('Please log in to follow users');
+        return;
+      }
+      
       const response = await fetch('http://localhost:8080/api/follows', {
         method: 'POST',
         headers: {
@@ -85,15 +96,26 @@ export default function Explore() {
       });
 
       if (response.ok) {
-        // Update user follow status locally
-        setUsers(prev => prev.map(user => 
+        const data = await response.json();
+        // Update user follow status in both arrays
+        const updateUser = (user) => 
           user.id === userId 
-            ? { ...user, isFollowing: !user.isFollowing }
-            : user
-        ));
+            ? { ...user, isFollowing: data.isFollowing }
+            : user;
+        
+        setUsers(prev => prev.map(updateUser));
+        setFilteredUsers(prev => prev.map(updateUser));
+        
+        // Show feedback to user
+        alert(data.isFollowing ? 'Following user!' : 'Unfollowed user');
+      } else {
+        const errorData = await response.json();
+        console.error('Follow error:', errorData);
+        alert('Error following user: ' + (errorData.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Error following user:', error);
+      alert('Error following user. Please try again.');
     }
   };
 

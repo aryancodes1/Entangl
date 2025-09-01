@@ -122,15 +122,33 @@ export default function SignUp() {
     }
   };
 
-  const handleGoogleSignUp = () => {
-    // Check if phone is verified
-    const phoneVerified = localStorage.getItem('phoneVerified');
-    if (phoneVerified !== 'true') {
-      setShowPhoneVerification(true);
-      return;
+  const handleGoogleSignIn = async () => {
+    try {
+      setLoading(true);
+      
+      // Store that we're using Google login
+      localStorage.setItem('loginMethod', 'google');
+      
+      const result = await signIn('google', { 
+        redirect: false,
+        callbackUrl: '/feed'
+      });
+      
+      if (result?.error) {
+        console.error('Google sign in error:', result.error);
+        setError('Google sign in failed. Please try again.');
+        localStorage.removeItem('loginMethod');
+      } else if (result?.ok) {
+        console.log('Google sign in successful, redirecting...');
+        router.push('/feed');
+      }
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      setError('Google sign in failed. Please try again.');
+      localStorage.removeItem('loginMethod');
+    } finally {
+      setLoading(false);
     }
-    
-    signIn('google', { callbackUrl: '/profile' });
   };
 
   const handlePhoneVerificationComplete = (phoneNumber) => {
@@ -176,7 +194,7 @@ export default function SignUp() {
           
           <div className="pt-2">
             <button 
-              onClick={handleGoogleSignUp}
+              onClick={handleGoogleSignIn}
               className="w-full flex items-center justify-center gap-2 bg-white text-black font-semibold py-2 rounded-full hover:bg-gray-200 transition-colors text-sm"
             >
               <svg className="w-5 h-5" viewBox="0 0 488 512"><path d="M488 261.8C488 403.3 381.5 512 244 512 109.8 512 0 402.2 0 261.8 0 120.5 109.8 8.4 244 8.4c77.3 0 143.3 30.1 191.4 78.4l-77.9 77.9C325.8 134.8 289.1 112 244 112c-66.3 0-120.3 54-120.3 120.3s54 120.3 120.3 120.3c75.3 0 104.2-52.5 108.7-79.3H244V202h151.1c2.1 11.1 3.4 22.5 3.4 34.9z"/></svg>

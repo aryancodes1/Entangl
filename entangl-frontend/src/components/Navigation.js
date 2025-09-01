@@ -37,18 +37,30 @@ export default function Navigation() {
   };
 
   const handleLogout = async () => {
-    const loginMethod = localStorage.getItem('loginMethod');
-    
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('phoneVerified');
-    localStorage.removeItem('verifiedPhone');
-    localStorage.removeItem('loginMethod');
-    
-    if (loginMethod === 'google' && session) {
-      await signOut({ callbackUrl: '/login' });
-    } else {
-      router.push('/login');
+    try {
+      const loginMethod = localStorage.getItem('loginMethod');
+      
+      // Clear localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('phoneVerified');
+      localStorage.removeItem('verifiedPhone');
+      localStorage.removeItem('loginMethod');
+      
+      // If logged in via Google, sign out from NextAuth
+      if (loginMethod === 'google' && session) {
+        await signOut({ 
+          callbackUrl: '/login',
+          redirect: false 
+        });
+      }
+      
+      // Force redirect
+      window.location.href = '/login';
+      
+    } catch (error) {
+      console.error('Logout error:', error);
+      window.location.href = '/login';
     }
   };
 

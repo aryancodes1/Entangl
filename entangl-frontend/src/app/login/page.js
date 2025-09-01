@@ -1,12 +1,13 @@
 'use client'
 
 import Link from 'next/link';
-import { signIn, getSession } from 'next-auth/react';
+import { signIn, getSession, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import PhoneVerification from '../../components/PhoneVerification';
 
 export default function LogIn() {
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
   const [verifiedPhone, setVerifiedPhone] = useState(null);
@@ -36,6 +37,32 @@ export default function LogIn() {
       setVerifiedPhone(phone);
     }
   }, [router]);
+
+  useEffect(() => {
+    // Clear any existing auth state when visiting login page
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token');
+      const loginMethod = localStorage.getItem('loginMethod');
+      
+      console.log('Login page auth check:', { hasSession: !!session, hasToken: !!token, loginMethod, status });
+      
+      // If user is already authenticated and not being redirected, go to feed
+      if ((token && loginMethod === 'manual') || (session && status === 'authenticated')) {
+        console.log('User already authenticated, redirecting to feed');
+        router.push('/feed');
+        return;
+      }
+      
+      // Clear any stale auth data only if not authenticated
+      if (status !== 'loading' && !session && !token) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('loginMethod');
+        localStorage.removeItem('phoneVerified');
+        localStorage.removeItem('verifiedPhone');
+      }
+    }
+  }, [session, status, router]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

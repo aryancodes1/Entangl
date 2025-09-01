@@ -6,7 +6,7 @@ if (!global.otpStore) {
   global.otpStore = otpStore;
 }
 
-// Twilio configuration
+// Twilio configuration - PRODUCTION MODE
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
@@ -32,12 +32,19 @@ export async function POST(request) {
     }
 
     // Format phone number for international use
-    let formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+1${cleanedPhone}`;
-    
-    // For Indian numbers, use +91
-    if (cleanedPhone.length === 10 && !phoneNumber.startsWith('+')) {
-      formattedPhone = `+91${cleanedPhone}`;
+    let formattedPhone;
+    if (phoneNumber.startsWith('+')) {
+      formattedPhone = phoneNumber;
+    } else if (cleanedPhone.length === 10) {
+      // Assume US number
+      formattedPhone = `+1${cleanedPhone}`;
+    } else if (cleanedPhone.length === 11 && cleanedPhone.startsWith('1')) {
+      formattedPhone = `+${cleanedPhone}`;
+    } else {
+      formattedPhone = `+${cleanedPhone}`;
     }
+
+    console.log(`Processing OTP request for: ${formattedPhone}`);
 
     // Check if OTP was recently sent (rate limiting)
     const existingOtp = otpStore.get(formattedPhone);
@@ -50,65 +57,101 @@ export async function POST(request) {
     // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     
-    // Store OTP with expiration (5 minutes)
+    // Store OTP with expiration (10 minutes)
     otpStore.set(formattedPhone, {
       otp,
-      expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutes
+      expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
       sentAt: Date.now(),
       attempts: 0
     });
 
-    const otpMessage = `Your Entangl verification code is: ${otp}. Valid for 5 minutes. Don't share this code with anyone.`;
+    const otpMessage = `Your Entangl verification code is: ${otp}. This code will expire in 10 minutes. Don't share this code with anyone.`;
 
-    // Try to send SMS using Twilio
-    if (twilioClient && twilioPhoneNumber) {
-      try {
-        await twilioClient.messages.create({
-          body: otpMessage,
-          from: twilioPhoneNumber,
-          to: formattedPhone
-        });
-
-        console.log(`OTP sent via Twilio to ${formattedPhone}: ${otp}`);
-        
-        return NextResponse.json({ 
-          message: 'OTP sent successfully',
-          phoneNumber: formattedPhone
-        });
-
-      } catch (twilioError) {
-        console.error('Twilio error:', twilioError);
-        
-        // Fallback: Log OTP for development
-        console.log(`Twilio failed. OTP for ${formattedPhone}: ${otp}`);
-        
-        return NextResponse.json({ 
-          message: 'OTP sent successfully (fallback mode)',
-          phoneNumber: formattedPhone,
-          // Show OTP in development when Twilio fails
-          ...(process.env.NODE_ENV === 'development' && { 
-            otp,
-            note: 'Twilio failed, showing OTP for development' 
-          })
-        });
-      }
-    } else {
-      // No Twilio configured - development mode
-      console.log(`Development mode - OTP for ${formattedPhone}: ${otp}`);
+    // Validate Twilio configuration
+    if (!twilioClient || !twilioPhoneNumber) {
+      console.error('Twilio not configured properly:', {
+        hasClient: !!twilioClient,
+        hasPhoneNumber: !!twilioPhoneNumber,
+        accountSid: accountSid ? 'Set' : 'Missing',
+        authToken: authToken ? 'Set' : 'Missing'
+      });
       
       return NextResponse.json({ 
-        message: 'OTP sent successfully (development mode)',
-        phoneNumber: formattedPhone,
-        // Show OTP in development when no SMS service configured
-        ...(process.env.NODE_ENV === 'development' && { 
-          otp,
-          note: 'Development mode - configure Twilio for production' 
-        })
+        error: 'SMS service not configured. Please contact support.',
+        details: 'Twilio configuration missing'
+      }, { status: 500 });
+    }
+
+    try {
+      console.log(`Sending SMS to ${formattedPhone} from ${twilioPhoneNumber}`);
+      
+      const message = await twilioClient.messages.create({
+        body: otpMessage,
+        from: twilioPhoneNumber,
+        to: formattedPhone
       });
+
+      console.log(`OTP sent successfully via Twilio:`, {
+        messageSid: message.sid,
+        to: formattedPhone,
+        status: message.status
+      });
+      
+      return NextResponse.json({ 
+        message: 'OTP sent successfully',
+        phoneNumber: formattedPhone,
+        messageSid: message.sid
+      });
+
+    } catch (twilioError) {
+      console.error('Twilio error details:', {
+        code: twilioError.code,
+        message: twilioError.message,
+        status: twilioError.status,
+        details: twilioError.details
+      });
+      
+      // Handle specific Twilio errors
+      let errorMessage = 'Failed to send OTP';
+      
+      switch (twilioError.code) {
+        case 21211:
+          errorMessage = 'Invalid phone number format';
+          break;
+        case 21408:
+          errorMessage = 'Permission to send SMS has not been enabled for this region';
+          break;
+        case 21614:
+          errorMessage = 'Phone number is not a valid mobile number';
+          break;
+        case 21610:
+          errorMessage = 'Phone number is not verified (Trial account limitation)';
+          break;
+        case 20003:
+          errorMessage = 'Authentication failed - check Twilio credentials';
+          break;
+        case 21606:
+          errorMessage = 'Phone number is not a valid mobile number';
+          break;
+        default:
+          errorMessage = `Twilio error: ${twilioError.message}`;
+      }
+      
+      // Clean up stored OTP since sending failed
+      otpStore.delete(formattedPhone);
+      
+      return NextResponse.json({ 
+        error: errorMessage,
+        code: twilioError.code,
+        details: twilioError.message
+      }, { status: 400 });
     }
 
   } catch (error) {
     console.error('Send OTP error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error.message 
+    }, { status: 500 });
   }
 }

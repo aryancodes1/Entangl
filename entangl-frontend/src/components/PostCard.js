@@ -123,7 +123,6 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
   return (
     <article className="border-b border-gray-200 dark:border-gray-800 px-4 py-3 hover:bg-gray-50 hover:dark:bg-gray-950/30 transition-colors cursor-pointer">
       <div className="flex space-x-3">
-        {/* Avatar */}
         <Link href={`/user/${post.author.id}`} className="flex-shrink-0">
           {post.author.avatar ? (
             <img
@@ -141,24 +140,32 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
         </Link>
 
         <div className="flex-1 min-w-0">
-          {/* Header */}
-          <div className="flex items-center space-x-1">
-            <Link href={`/user/${post.author.id}`} className="font-bold text-gray-900 dark:text-white hover:underline max-w-[200px] truncate">
-              {post.author.displayName || post.author.username}
-            </Link>
-            {post.author.verified && (
-              <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-2.284-1.525c-.33-.22-.418-.66-.196-.99.22-.33.66-.418.99-.196L10.436 14.7l3.852-5.778c.22-.33.66-.418.99-.196.33.22.418.66.196.99z"/>
-              </svg>
-            )}
-            <span className="text-gray-500 max-w-[120px] truncate">@{post.author.username}</span>
-            <span className="text-gray-500">·</span>
-            <time className="text-gray-500 text-sm hover:underline">
-              {formatTimeAgo(post.createdAt)}
-            </time>
-            
+          {/* Author info and menu */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-1 min-w-0">
+              <Link
+                href={`/user/${post.author.id}`}
+                className="font-bold text-gray-900 dark:text-white hover:underline truncate"
+              >
+                {post.author.displayName || post.author.username}
+              </Link>
+              
+              {post.author.verified && (
+                <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-2.284-1.525c-.33-.22-.418-.66-.196-.99.22-.33.66-.418.99-.196L10.436 14.7l3.852-5.778c.22-.33.66-.418.99-.196.33.22.418.66.196.99z"/>
+                </svg>
+              )}
+
+              <span className="text-gray-500 truncate">@{post.author.username}</span>
+              <span className="text-gray-500">·</span>
+              <time className="text-gray-500 text-sm hover:underline flex-shrink-0">
+                {formatTimeAgo(post.createdAt)}
+              </time>
+            </div>
+
+            {/* Dropdown menu for own posts */}
             {currentUserId === post.author.id && (
-              <div className="ml-auto relative">
+              <div className="relative ml-auto">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -167,10 +174,10 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
                   className="p-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-colors"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
                   </svg>
                 </button>
-                
+
                 {showDropdown && (
                   <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl shadow-lg z-10">
                     <button
@@ -194,7 +201,7 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
 
           {/* Content */}
           <div className="mt-1">
-            {post.content && (
+            {post.content && post.content.trim() && (
               <p className="text-gray-900 dark:text-white text-[15px] leading-5 whitespace-pre-wrap break-words">
                 {post.content}
               </p>
@@ -202,7 +209,7 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
 
             {/* Image */}
             {post.imageUrl && (
-              <div className="mt-3 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
+              <div className={`${post.content && post.content.trim() ? 'mt-3' : ''} rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700`}>
                 <img
                   src={post.imageUrl}
                   alt="Post media"
