@@ -124,8 +124,12 @@ router.get('/', authenticateToken, async (req, res) => {
         _count: {
           select: {
             posts: true,
-            followers: true,
-            following: true
+            followers: {
+              where: { status: 'accepted' }
+            },
+            following: {
+              where: { status: 'accepted' }
+            }
           }
         }
       },
@@ -179,8 +183,12 @@ router.get('/:id', async (req, res) => {
         _count: {
           select: {
             posts: true,
-            followers: true,
-            following: true
+            followers: {
+              where: { status: 'accepted' }
+            },
+            following: {
+              where: { status: 'accepted' }
+            }
           }
         }
       }

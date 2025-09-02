@@ -167,6 +167,47 @@ router.get('/profile', authenticateToken, async (req, res) => {
   }
 });
 
+// GET /profile - Get current user profile with counts
+router.get('/profile', authenticateToken, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        displayName: true,
+        bio: true,
+        avatar: true,
+        phone: true,
+        verified: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: {
+          select: {
+            posts: true,
+            followers: {
+              where: { status: 'accepted' }
+            },
+            following: {
+              where: { status: 'accepted' }
+            }
+          }
+        }
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ user });
+  } catch (error) {
+    console.error('Profile fetch error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // PUT /api/auth/profile - Update current user profile
 router.put('/profile', authenticateToken, async (req, res) => {
   try {

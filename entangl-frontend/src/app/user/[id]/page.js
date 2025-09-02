@@ -59,6 +59,7 @@ export default function UserProfile({ params }) {
         }
       } else if (currentUserId === userId) {
         // Own profile - can view posts
+        setFollowStatus('self');
         setCanViewPosts(true);
       }
 
@@ -345,11 +346,15 @@ export default function UserProfile({ params }) {
 
                 <div className="flex space-x-6">
                   <span>
-                    <span className="font-bold text-black dark:text-white">{userData._count?.following || 0}</span>
+                    <span className="font-bold text-black dark:text-white">
+                      {userData?._count?.following || 0}
+                    </span>
                     <span className="text-gray-500 ml-1">Following</span>
                   </span>
                   <span>
-                    <span className="font-bold text-black dark:text-white">{userData._count?.followers || 0}</span>
+                    <span className="font-bold text-black dark:text-white">
+                      {userData?._count?.followers || 0}
+                    </span>
                     <span className="text-gray-500 ml-1">Followers</span>
                   </span>
                 </div>

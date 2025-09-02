@@ -28,14 +28,50 @@ export default function Profile() {
       setLoading(true);
       const loginMethod = localStorage.getItem('loginMethod');
       const token = localStorage.getItem('token');
-      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
 
-      console.log('handleUserData called:', { loginMethod, hasToken: !!token, hasSession: !!session });
+      console.log('handleUserData called:', {
+        loginMethod,
+        hasToken: !!token,
+        hasSession: !!session
+      });
 
-      // If we have stored user data (both Google and manual users), use it
-      if (userData.id && token) {
+      // Always fetch fresh data from API if we have token and user ID
+      if (token && storedUser.id) {
+        try {
+          const response = await fetch(`http://localhost:8080/api/users/${storedUser.id}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (response.ok) {
+            const freshUserData = await response.json();
+            setUserData({
+              ...freshUserData,
+              loginMethod: loginMethod || 'manual'
+            });
+            
+            // Update localStorage with fresh data
+            localStorage.setItem('user', JSON.stringify({
+              ...storedUser,
+              ...freshUserData
+            }));
+            return;
+          } else {
+            console.error('Failed to fetch fresh user data:', response.status);
+          }
+        } catch (apiError) {
+          console.error('API fetch error:', apiError);
+        }
+      }
+
+      // Fallback to stored data if API fails
+      if (storedUser.id && token) {
         setUserData({
-          ...userData,
+          ...storedUser,
           loginMethod: loginMethod || 'manual'
         });
         return;
@@ -96,53 +132,36 @@ export default function Profile() {
   const fetchUserDataFromDB = async () => {
     try {
       const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
       
-      if (!token) {
-        throw new Error('No token found');
+      if (!token || !user.id) {
+        throw new Error('No token or user ID found');
       }
 
-      // Try different possible endpoints
-      const possibleEndpoints = [
-        'http://localhost:8080/api/user/profile',
-        'http://localhost:8080/api/profile',
-        'http://localhost:8080/api/user',
-        'http://localhost:8080/api/auth/profile'
-      ];
+      // Fetch user profile with counts
+      const response = await fetch(`http://localhost:8080/api/users/${user.id}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-      let response;
-      let lastError;
-
-      for (const endpoint of possibleEndpoints) {
-        try {
-          response = await fetch(endpoint, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            setUserData({
-              ...data.user || data,
-              loginMethod: 'manual'
-            });
-            return;
-          } else if (response.status !== 404) {
-            // If it's not a 404, it means the endpoint exists but there's another issue
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || `HTTP ${response.status}`);
-          }
-        } catch (fetchError) {
-          if (!fetchError.message.includes('404')) {
-            lastError = fetchError;
-          }
-        }
+      if (response.ok) {
+        const data = await response.json();
+        setUserData({
+          ...data,
+          loginMethod: 'manual'
+        });
+        
+        // Update localStorage with fresh data
+        localStorage.setItem('user', JSON.stringify({
+          ...user,
+          ...data
+        }));
+      } else {
+        throw new Error(`HTTP ${response.status}`);
       }
-
-      // If we get here, none of the endpoints worked
-      throw new Error(lastError?.message || 'Profile endpoint not found. Please check your backend API.');
 
     } catch (error) {
       setError(error.message);
@@ -512,11 +531,15 @@ export default function Profile() {
 
                   <div className="flex space-x-6">
                     <button className="hover:underline">
-                      <span className="font-bold text-black dark:text-white">0</span>
+                      <span className="font-bold text-black dark:text-white">
+                        {userData?._count?.following || 0}
+                      </span>
                       <span className="text-gray-500 ml-1">Following</span>
                     </button>
                     <button className="hover:underline">
-                      <span className="font-bold text-black dark:text-white">0</span>
+                      <span className="font-bold text-black dark:text-white">
+                        {userData?._count?.followers || 0}
+                      </span>
                       <span className="text-gray-500 ml-1">Followers</span>
                     </button>
                   </div>
