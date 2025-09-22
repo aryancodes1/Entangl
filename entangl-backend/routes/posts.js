@@ -48,34 +48,35 @@ router.get('/feed', optionalAuth, async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
+    const userId = req.user.id;
 
-    // If no user authenticated, return public posts
-    if (!req.user) {
-      return res.redirect(`/api/posts?page=${page}&limit=${limit}`);
-    }
-
-    // Get users that current user follows
+    // Find who the current user is following
     const following = await prisma.follow.findMany({
-      where: { followerId: req.user.id },
-      select: { followingId: true }
+      where: {
+        followerId: userId,
+        status: 'accepted',
+      },
+      select: {
+        followingId: true,
+      },
     });
 
-    const followingIds = following.map(f => f.followingId);
-    
-    // Include own posts and posts from followed users
-    followingIds.push(req.user.id);
-    
-    let whereClause = {};
-    if (followingIds.length > 0) {
-      whereClause = {
-        authorId: {
-          in: followingIds
-        }
-      };
-    }
+    const followingIds = following.map((f) => f.followingId);
+
+    // Include user's own posts in their feed
+    const authorIds = [...followingIds, userId];
 
     const posts = await prisma.post.findMany({
-      where: whereClause,
+      where: {
+        authorId: {
+          in: authorIds,
+        },
+      },
+      skip,
+      take: parseInt(limit),
+      orderBy: {
+        createdAt: 'desc',
+      },
       include: {
         author: {
           select: {
@@ -83,39 +84,35 @@ router.get('/feed', optionalAuth, async (req, res) => {
             username: true,
             displayName: true,
             avatar: true,
-            verified: true
-          }
-        },
-        likes: {
-          select: {
-            userId: true
-          }
+            verified: true,
+          },
         },
         _count: {
           select: {
             likes: true,
-            comments: true
-          }
-        }
+            comments: true,
+          },
+        },
+        likes: {
+          where: {
+            userId: req.user?.id,
+          },
+          select: {
+            userId: true,
+          },
+        },
       },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      skip: parseInt(skip),
-      take: parseInt(limit)
     });
 
-    const postsWithLikeStatus = posts.map(post => ({
+    const postsWithContext = posts.map(post => ({
       ...post,
-      isLiked: post.likes.some(like => like.userId === req.user.id),
-      likes: post._count.likes,
-      comments: post._count.comments
+      isLiked: post.likes.length > 0,
     }));
 
-    res.json(postsWithLikeStatus);
+    res.json(postsWithContext);
   } catch (error) {
     console.error('Error fetching feed:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Could not fetch feed' });
   }
 });
 
@@ -124,10 +121,44 @@ router.get('/', optionalAuth, async (req, res) => {
   try {
     const { page = 1, limit = 10, userId } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
+    const currentUserId = req.user?.id;
 
     let whereClause = {};
     if (userId) {
       whereClause = { authorId: userId };
+    } else if (currentUserId) {
+      const following = await prisma.follow.findMany({
+        where: { followerId: currentUserId, status: 'accepted' },
+        select: { followingId: true },
+      });
+      const followingIds = following.map(f => f.followingId);
+      
+      whereClause = {
+        OR: [
+          { isPublic: true },
+          { authorId: { in: followingIds } },
+          { authorId: currentUserId },
+        ],
+      };
+    } else {
+      whereClause = { isPublic: true };
+    }
+
+    // If a specific user's posts are requested, check for privacy
+    if (userId && currentUserId !== userId) {
+      const targetUser = await prisma.user.findUnique({ where: { id: userId } });
+      if (targetUser?.isPrivate) {
+        const isFollowing = await prisma.follow.findFirst({
+          where: {
+            followerId: currentUserId,
+            followingId: userId,
+            status: 'accepted',
+          },
+        });
+        if (!isFollowing) {
+          return res.json([]); // Return empty if not following a private user
+        }
+      }
     }
 
     const posts = await prisma.post.findMany({
@@ -140,6 +171,11 @@ router.get('/', optionalAuth, async (req, res) => {
             displayName: true,
             avatar: true,
             verified: true
+          }
+        },
+        hashtags: {
+          select: {
+            name: true
           }
         },
         likes: {
@@ -178,9 +214,10 @@ router.get('/', optionalAuth, async (req, res) => {
 // POST create post
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { content, imageUrl } = req.body;
+    const { content, imageUrl, hashtags } = req.body;
+    const user = req.user;
     
-    console.log('Creating post with data:', { content, imageUrl, userId: req.user.id });
+    console.log('Creating post with data:', { content, imageUrl, hashtags, userId: user.id });
     
     // Allow posts with either content or image (or both)
     if (!content && !imageUrl) {
@@ -198,11 +235,30 @@ router.post('/', authenticateToken, async (req, res) => {
       });
     }
 
+    const hashtagOps = [];
+    if (hashtags) {
+      const hashtagNames = hashtags.split(/[\s#]+/).filter(Boolean);
+      if (hashtagNames.length > 0) {
+        for (const name of hashtagNames) {
+          hashtagOps.push({
+            where: { name },
+            create: { name },
+          });
+        }
+      }
+    }
+
     const post = await prisma.post.create({
       data: {
         content: content || null, // Allow null content if there's an image
         imageUrl: imageUrl || null,
-        authorId: req.user.id
+        authorId: user.id,
+        isPublic: !user.isPrivate,
+        ...(hashtagOps.length > 0 && {
+          hashtags: {
+            connectOrCreate: hashtagOps,
+          },
+        }),
       },
       include: {
         author: {
@@ -292,6 +348,11 @@ router.put('/:id', authenticateToken, async (req, res) => {
             verified: true
           }
         },
+        hashtags: {
+          select: {
+            name: true
+          }
+        },
         _count: {
           select: {
             likes: true,
@@ -379,19 +440,57 @@ router.post('/:id/like', authenticateToken, async (req, res) => {
 router.get('/search', optionalAuth, async (req, res) => {
   try {
     const { q, limit = 20 } = req.query;
+    const currentUserId = req.user?.id;
     
     if (!q || q.trim().length < 1) {
       return res.json([]);
     }
 
     const searchTerm = q.trim();
+    const isHashtagSearch = searchTerm.startsWith('#');
+    const cleanSearchTerm = isHashtagSearch ? searchTerm.substring(1) : searchTerm;
+
+    // Get IDs of users the current user is following
+    let followingIds = [];
+    if (currentUserId) {
+      const following = await prisma.follow.findMany({
+        where: { followerId: currentUserId, status: 'accepted' },
+        select: { followingId: true },
+      });
+      followingIds = following.map(f => f.followingId);
+    }
     
     const posts = await prisma.post.findMany({
       where: {
-        content: {
-          contains: searchTerm,
-          mode: 'insensitive'
-        }
+        AND: [
+          {
+            OR: [
+              { isPublic: true },
+              { authorId: currentUserId },
+              { authorId: { in: followingIds } },
+            ]
+          },
+          {
+            OR: [
+              {
+                content: {
+                  contains: cleanSearchTerm,
+                  mode: 'insensitive'
+                }
+              },
+              {
+                hashtags: {
+                  some: {
+                    name: {
+                      contains: cleanSearchTerm,
+                      mode: 'insensitive'
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
       },
       include: {
         author: {
@@ -401,6 +500,11 @@ router.get('/search', optionalAuth, async (req, res) => {
             displayName: true,
             avatar: true,
             verified: true
+          }
+        },
+        hashtags: {
+          select: {
+            name: true
           }
         },
         likes: {

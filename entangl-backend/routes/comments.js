@@ -43,6 +43,15 @@ router.post('/', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Content and postId are required' });
     }
 
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { authorId: true },
+    });
+
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
     const comment = await prisma.comment.create({
       data: {
         content,
@@ -61,6 +70,19 @@ router.post('/', authenticateToken, async (req, res) => {
         }
       }
     });
+
+    // Create a notification for the post author
+    if (post.authorId !== req.user.id) {
+      await prisma.notification.create({
+        data: {
+          userId: post.authorId,
+          type: 'COMMENT',
+          senderId: req.user.id,
+          postId: postId,
+        },
+      });
+    }
+
     res.status(201).json(comment);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -71,36 +93,19 @@ router.post('/', authenticateToken, async (req, res) => {
 router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const { content } = req.body;
-    const commentId = req.params.id;
-
-    const existingComment = await prisma.comment.findUnique({
-      where: { id: commentId }
+    const comment = await prisma.comment.findUnique({
+      where: { id: req.params.id },
     });
 
-    if (!existingComment) {
-      return res.status(404).json({ error: 'Comment not found' });
+    if (comment.userId !== req.user.id) {
+      return res.status(403).json({ error: 'Forbidden' });
     }
 
-    if (existingComment.userId !== req.user.id) {
-      return res.status(403).json({ error: 'Not authorized to edit this comment' });
-    }
-
-    const comment = await prisma.comment.update({
-      where: { id: commentId },
+    const updatedComment = await prisma.comment.update({
+      where: { id: req.params.id },
       data: { content },
-      include: {
-        user: {
-          select: {
-            id: true,
-            username: true,
-            displayName: true,
-            avatar: true,
-            verified: true
-          }
-        }
-      }
     });
-    res.json(comment);
+    res.json(updatedComment);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -109,26 +114,34 @@ router.put('/:id', authenticateToken, async (req, res) => {
 // DELETE comment
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
-    const commentId = req.params.id;
+    const { id } = req.params;
+    const userId = req.user.id;
 
-    const existingComment = await prisma.comment.findUnique({
-      where: { id: commentId }
+    const comment = await prisma.comment.findUnique({
+      where: { id },
     });
 
-    if (!existingComment) {
+    if (!comment) {
       return res.status(404).json({ error: 'Comment not found' });
     }
 
-    if (existingComment.userId !== req.user.id) {
-      return res.status(403).json({ error: 'Not authorized to delete this comment' });
+    // Optional: Allow post author to delete comments on their post
+    const post = await prisma.post.findUnique({
+      where: { id: comment.postId },
+      select: { authorId: true },
+    });
+
+    if (comment.userId !== userId && post.authorId !== userId) {
+      return res.status(403).json({ error: 'You are not authorized to delete this comment' });
     }
 
     await prisma.comment.delete({
-      where: { id: commentId }
+      where: { id },
     });
-    res.json({ message: 'Comment deleted successfully' });
+
+    res.status(204).send(); // No Content
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(500).json({ error: 'Could not delete comment' });
   }
 });
 

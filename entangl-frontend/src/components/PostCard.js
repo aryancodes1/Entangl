@@ -41,6 +41,29 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
   const [loadingComments, setLoadingComments] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
+  const handleDeleteComment = async (commentId) => {
+    if (window.confirm('Are you sure you want to delete this comment?')) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`http://localhost:8080/api/comments/${commentId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          setComments(prev => prev.filter(c => c.id !== commentId));
+          setCommentsCount(prev => prev - 1);
+        } else {
+          alert('Failed to delete comment.');
+        }
+      } catch (error) {
+        console.error('Error deleting comment:', error);
+      }
+    }
+  };
+
   const handleLike = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -235,9 +258,20 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
               </p>
             )}
 
+            {/* Hashtags */}
+            {post.hashtags && post.hashtags.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {post.hashtags.map(hashtag => (
+                  <Link key={hashtag.name} href={`/explore?q=%23${hashtag.name}`} className="text-blue-500 hover:underline">
+                    #{hashtag.name}
+                  </Link>
+                ))}
+              </div>
+            )}
+
             {/* Image */}
             {post.imageUrl && (
-              <div className={`${post.content && post.content.trim() ? 'mt-3' : ''} rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700`}>
+              <div className={`${(post.content && post.content.trim()) || (post.hashtags && post.hashtags.length > 0) ? 'mt-3' : ''} rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700`}>
                 <img
                   src={post.imageUrl}
                   alt="Post media"
@@ -362,16 +396,29 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
                           </div>
                         )}
                       </Link>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-1">
-                          <Link href={`/user/${comment.user.id}`} className="font-bold text-gray-900 dark:text-white hover:underline text-sm truncate">
-                            {comment.user.displayName || comment.user.username}
-                          </Link>
-                          <span className="text-gray-500 text-sm truncate">@{comment.user.username}</span>
-                          <span className="text-gray-500 text-sm">·</span>
-                          <span className="text-gray-500 text-sm">{formatTimeAgo(comment.createdAt)}</span>
+                      <div className="flex-1 min-w-0 flex justify-between items-start">
+                        <div>
+                          <div className="flex items-center space-x-1">
+                            <Link href={`/user/${comment.user.id}`} className="font-bold text-gray-900 dark:text-white hover:underline text-sm truncate">
+                              {comment.user.displayName || comment.user.username}
+                            </Link>
+                            <span className="text-gray-500 text-sm truncate">@{comment.user.username}</span>
+                            <span className="text-gray-500 text-sm">·</span>
+                            <span className="text-gray-500 text-sm">{formatTimeAgo(comment.createdAt)}</span>
+                          </div>
+                          <p className="text-gray-900 dark:text-white text-sm mt-0.5">{comment.content}</p>
                         </div>
-                        <p className="text-gray-900 dark:text-white text-sm mt-0.5">{comment.content}</p>
+                        {(currentUserId === comment.user.id || currentUserId === post.author.id) && (
+                          <button
+                            onClick={() => handleDeleteComment(comment.id)}
+                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-colors flex-shrink-0 ml-2"
+                            title="Delete comment"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}

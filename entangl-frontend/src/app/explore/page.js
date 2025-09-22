@@ -98,18 +98,24 @@ export default function Explore() {
     setSearchQuery(value);
     
     if (value.length > 0) {
-      setShowSuggestions(true);
-      try {
-        const token = localStorage.getItem('token');
-        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-        
-        const response = await fetch(`http://localhost:8080/api/users/search?q=${encodeURIComponent(value)}&limit=5`, { headers });
-        if (response.ok) {
-          const data = await response.json();
-          setSuggestions(data.filter(user => user.id !== currentUserId));
+      if (value.startsWith('#')) {
+        setShowSuggestions(false);
+        setSuggestions([]);
+        // You might want to search for hashtags here if you have an endpoint for it
+      } else {
+        setShowSuggestions(true);
+        try {
+          const token = localStorage.getItem('token');
+          const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+          
+          const response = await fetch(`http://localhost:8080/api/users/search?q=${encodeURIComponent(value)}&limit=5`, { headers });
+          if (response.ok) {
+            const data = await response.json();
+            setSuggestions(data.filter(user => user.id !== currentUserId));
+          }
+        } catch (error) {
+          console.error('Suggestions error:', error);
         }
-      } catch (error) {
-        console.error('Suggestions error:', error);
       }
     } else {
       setShowSuggestions(false);
@@ -210,10 +216,11 @@ export default function Explore() {
   };
 
   const tabs = [
-    { id: 'top', label: 'Top', icon: '⭐' },
-    { id: 'latest', label: 'Latest', icon: '🕒' },
-    { id: 'people', label: 'People', icon: '👥' },
-    { id: 'photos', label: 'Photos', icon: '📸' }
+    { id: 'top', label: 'For You' },
+    { id: 'latest', label: 'Trending' },
+    { id: 'people', label: 'People' },
+    { id: 'photos', label: 'Photos' },
+    { id: 'hashtags', label: 'Hashtags' }
   ];
 
   const getFilteredContent = () => {
@@ -224,6 +231,8 @@ export default function Explore() {
         return posts.filter(post => post.imageUrl);
       case 'latest':
         return posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      case 'hashtags':
+        return posts.filter(post => post.hashtags && post.hashtags.length > 0);
       default:
         return posts;
     }
@@ -271,6 +280,7 @@ export default function Explore() {
                         type="button"
                         onClick={() => {
                           setSearchQuery('');
+                          router.push('/explore');
                           loadTrendingContent();
                         }}
                         className="absolute right-4 top-3.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
@@ -325,16 +335,15 @@ export default function Explore() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 px-4 py-3 font-medium text-sm whitespace-nowrap transition-colors relative ${
+                  className={`flex-1 py-4 text-center font-medium transition-colors relative ${
                     activeTab === tab.id
                       ? 'text-black dark:text-white'
                       : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
                   }`}
                 >
-                  <span>{tab.icon}</span>
                   <span>{tab.label}</span>
                   {activeTab === tab.id && (
-                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-blue-500 rounded-full"></div>
+                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-1 bg-blue-500 rounded-full"></div>
                   )}
                 </button>
               ))}
@@ -401,21 +410,33 @@ export default function Explore() {
                 )}
               </div>
             ) : (
-              // Posts Tab
-              <div>
-                {posts.length === 0 ? (
+              // Grid for Posts
+              <div className={activeTab === 'photos' ? 'p-1' : ''}>
+                {getFilteredContent().length === 0 ? (
                   <div className="text-center py-12 px-4">
-                    <p className="text-gray-500">No posts found</p>
+                    <p className="text-gray-500">No content found for this tab.</p>
                   </div>
                 ) : (
-                  getFilteredContent().map(post => (
-                    <PostCard
-                      key={post.id}
-                      post={post}
-                      currentUserId={currentUserId}
-                      onDelete={() => {}}
-                    />
-                  ))
+                  <div className={
+                    activeTab === 'photos'
+                      ? "columns-2 md:columns-3 gap-1"
+                      : "grid grid-cols-1"
+                  }>
+                    {getFilteredContent().map(post => (
+                      activeTab === 'photos' ? (
+                        <Link href={`/post/${post.id}`} key={post.id} className="block mb-1 break-inside-avoid">
+                          <img src={post.imageUrl} alt="Post image" className="w-full h-auto object-cover" />
+                        </Link>
+                      ) : (
+                        <PostCard
+                          key={post.id}
+                          post={post}
+                          currentUserId={currentUserId}
+                          onDelete={() => {}}
+                        />
+                      )
+                    ))}
+                  </div>
                 )}
               </div>
             )}

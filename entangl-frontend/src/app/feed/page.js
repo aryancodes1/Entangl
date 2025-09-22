@@ -16,6 +16,7 @@ export default function Feed() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [activeTab, setActiveTab] = useState('for-you'); // 'for-you' or 'following'
 
   // Define fetchPosts before useEffect
   const fetchPosts = useCallback(async (pageNum = 1, reset = false) => {
@@ -51,7 +52,11 @@ export default function Feed() {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`http://localhost:8080/api/posts/feed?page=${pageNum}&limit=10`, {
+      const endpoint = activeTab === 'following' 
+        ? `http://localhost:8080/api/posts/feed?page=${pageNum}&limit=10`
+        : `http://localhost:8080/api/posts?page=${pageNum}&limit=10`;
+
+      const response = await fetch(endpoint, {
         headers,
       });
 
@@ -68,22 +73,7 @@ export default function Feed() {
         setPage(pageNum);
       } else {
         console.error('Failed to fetch posts:', response.status);
-        // Fallback to all posts if feed fails
-        const fallbackResponse = await fetch(`http://localhost:8080/api/posts?page=${pageNum}&limit=10`, {
-          headers,
-        });
-        if (fallbackResponse.ok) {
-          const fallbackData = await fallbackResponse.json();
-          
-          if (reset || pageNum === 1) {
-            setPosts(fallbackData);
-          } else {
-            setPosts(prev => [...prev, ...fallbackData]);
-          }
-          
-          setHasMore(fallbackData.length === 10);
-          setPage(pageNum);
-        }
+        setPosts([]); // Clear posts on error
       }
     } catch (error) {
       console.error('Error fetching posts:', error);
@@ -91,7 +81,7 @@ export default function Feed() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [session]);
+  }, [session, activeTab]);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -167,6 +157,16 @@ export default function Feed() {
     setPosts((prev) => prev.filter((post) => post.id !== postId));
   };
 
+  const handleCommentCreated = (postId) => {
+    setPosts(prevPosts =>
+      prevPosts.map(p =>
+        p.id === postId
+          ? { ...p, _count: { ...p._count, comments: (p._count.comments || 0) + 1 } }
+          : p
+      )
+    );
+  };
+
   const loadMore = () => {
     if (hasMore && !loadingMore) {
       fetchPosts(page + 1);
@@ -185,6 +185,16 @@ export default function Feed() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [page, hasMore, loadingMore, loadMore]);
+
+  const handleTabChange = (tab) => {
+    if (tab !== activeTab) {
+      setActiveTab(tab);
+      setPage(1);
+      setPosts([]);
+      setHasMore(true);
+      // fetchPosts will be triggered by the useEffect watching activeTab
+    }
+  };
 
   if (loading) {
     return (
@@ -212,10 +222,24 @@ export default function Feed() {
             </div>
             
             <div className="flex border-b border-gray-200 dark:border-gray-800">
-              <button className="flex-1 text-center py-4 font-medium text-black dark:text-white border-b-2 border-blue-500">
+              <button 
+                onClick={() => handleTabChange('for-you')}
+                className={`flex-1 text-center py-4 font-medium transition-colors ${
+                  activeTab === 'for-you' 
+                    ? 'text-black dark:text-white border-b-2 border-blue-500' 
+                    : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
                 For you
               </button>
-              <button className="flex-1 text-center py-4 font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+              <button 
+                onClick={() => handleTabChange('following')}
+                className={`flex-1 text-center py-4 font-medium transition-colors ${
+                  activeTab === 'following' 
+                    ? 'text-black dark:text-white border-b-2 border-blue-500' 
+                    : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
                 Following
               </button>
             </div>
@@ -233,8 +257,14 @@ export default function Feed() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                 </div>
-                <h3 className="text-3xl font-bold mb-2">Welcome to Entangl!</h3>
-                <p className="text-gray-500 mb-6 text-lg">This is the best place to see what's happening in your world.</p>
+                <h3 className="text-3xl font-bold mb-2">
+                  {activeTab === 'following' ? 'Your feed is empty' : 'Welcome to Entangl!'}
+                </h3>
+                <p className="text-gray-500 mb-6 text-lg">
+                  {activeTab === 'following' 
+                    ? "Posts from people you follow will show up here." 
+                    : "This is the best place to see what's happening in your world."}
+                </p>
                 <button
                   onClick={() => router.push('/explore')}
                   className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-full font-bold text-lg transition-colors"
@@ -250,7 +280,7 @@ export default function Feed() {
                     post={post}
                     currentUserId={currentUserId}
                     onDelete={handlePostDeleted}
-                    onComment={() => {}}
+                    onComment={() => handleCommentCreated(post.id)}
                   />
                 ))}
                 

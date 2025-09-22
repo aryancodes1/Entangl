@@ -17,7 +17,8 @@ export default function Profile() {
   const [editForm, setEditForm] = useState({
     displayName: '',
     bio: '',
-    avatar: ''
+    avatar: '',
+    isPrivate: false
   });
   const [activeTab, setActiveTab] = useState('posts');
   const [showLogoutMenu, setShowLogoutMenu] = useState(false);
@@ -129,6 +130,7 @@ export default function Profile() {
     }
   };
 
+
   const fetchUserDataFromDB = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -194,7 +196,8 @@ export default function Profile() {
     setEditForm({
       displayName: userData?.displayName || '',
       bio: userData?.bio || '',
-      avatar: userData?.avatar || ''
+      avatar: userData?.avatar || '',
+      isPrivate: userData?.isPrivate || false
     });
     setIsEditing(true);
   };
@@ -216,6 +219,14 @@ export default function Profile() {
       if (response.ok) {
         const updatedUser = await response.json();
         setUserData({ ...userData, ...updatedUser });
+        
+        // Also update localStorage to persist changes
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        localStorage.setItem('user', JSON.stringify({
+          ...storedUser,
+          ...updatedUser
+        }));
+
         setIsEditing(false);
       }
     } catch (error) {
@@ -435,7 +446,7 @@ export default function Profile() {
 
                 {/* Action Buttons */}
                 <div className="mt-16">
-                  {userData?.loginMethod === 'manual' && !isEditing && (
+                  {!isEditing && (
                     <button
                       onClick={handleEditProfile}
                       className="border border-gray-300 dark:border-gray-600 text-black dark:text-white px-6 py-2 rounded-full font-medium hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
@@ -486,7 +497,30 @@ export default function Profile() {
                         placeholder="https://example.com/avatar.jpg"
                       />
                     </div>
-                    <div className="flex space-x-3">
+                    <div className="flex items-center justify-between bg-gray-800 rounded-lg p-3">
+                      <div>
+                        <label htmlFor="isPrivate" className="font-medium text-white">
+                          Private Account
+                        </label>
+                        <p className="text-sm text-gray-400">
+                          If your account is private, only people you approve can see your posts.
+                        </p>
+                      </div>
+                      <label htmlFor="isPrivate" className="flex items-center cursor-pointer">
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            id="isPrivate"
+                            className="sr-only"
+                            checked={editForm.isPrivate}
+                            onChange={(e) => setEditForm({ ...editForm, isPrivate: e.target.checked })}
+                          />
+                          <div className={`block w-14 h-8 rounded-full ${editForm.isPrivate ? 'bg-blue-500' : 'bg-gray-600'}`}></div>
+                          <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${editForm.isPrivate ? 'transform translate-x-6' : ''}`}></div>
+                        </div>
+                      </label>
+                    </div>
+                    <div className="flex space-x-3 pt-2">
                       <button
                         onClick={handleSaveProfile}
                         className="bg-blue-500 text-white px-6 py-2 rounded-full font-medium hover:bg-blue-600 transition-colors"
@@ -636,4 +670,4 @@ export default function Profile() {
       )}
     </div>
   );
-}
+ }

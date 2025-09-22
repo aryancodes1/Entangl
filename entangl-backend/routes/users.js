@@ -42,12 +42,6 @@ router.get('/search', async (req, res) => {
               contains: searchTerm,
               mode: 'insensitive'
             }
-          },
-          {
-            email: {
-              contains: searchTerm,
-              mode: 'insensitive'
-            }
           }
         ]
       },
@@ -60,22 +54,53 @@ router.get('/search', async (req, res) => {
         verified: true,
         _count: {
           select: {
-            posts: true,
-            followers: true,
-            following: true
+            followers: true
           }
         }
       },
-      take: parseInt(limit),
-      orderBy: [
-        { verified: 'desc' },
-        { _count: { followers: 'desc' } },
-        { createdAt: 'desc' }
-      ]
+      take: 100 // Fetch more results to sort them in-app
     });
 
+    // Score and sort users
+    const scoredUsers = users.map(user => {
+      let score = 0;
+      const lowerSearchTerm = searchTerm.toLowerCase();
+      const lowerUsername = user.username.toLowerCase();
+      const lowerDisplayName = user.displayName?.toLowerCase() || '';
+
+      // Score username
+      if (lowerUsername === lowerSearchTerm) {
+        score += 100; // Exact match
+      } else if (lowerUsername.startsWith(lowerSearchTerm)) {
+        score += 50; // Starts with
+      } else if (lowerUsername.includes(lowerSearchTerm)) {
+        score += 10; // Contains
+      }
+      
+      // Score display name
+      if (lowerDisplayName === lowerSearchTerm) {
+        score += 80; // Exact match
+      } else if (lowerDisplayName.startsWith(lowerSearchTerm)) {
+        score += 40; // Starts with
+      } else if (lowerDisplayName.includes(lowerSearchTerm)) {
+        score += 5; // Contains
+      }
+
+      // Bonus for verified users
+      if (user.verified) {
+        score += 20;
+      }
+
+      // Add follower count to score to break ties and boost popular users
+      score += (user._count.followers || 0) / 100;
+
+      return { ...user, score };
+    }).sort((a, b) => b.score - a.score);
+
+    const topUsers = scoredUsers.slice(0, parseInt(limit));
+
     // Add follow status for current user
-    const usersWithFollowStatus = await Promise.all(users.map(async (user) => {
+    const usersWithFollowStatus = await Promise.all(topUsers.map(async (user) => {
       if (!currentUserId || user.id === currentUserId) {
         return { ...user, followStatus: 'none' };
       }
@@ -207,7 +232,7 @@ router.get('/:id', async (req, res) => {
 // PUT update user profile
 router.put('/:id', authenticateToken, async (req, res) => {
   try {
-    const { displayName, bio, avatar } = req.body;
+    const { displayName, bio, avatar, isPrivate } = req.body;
     const userId = req.params.id;
 
     // Check if user is updating their own profile
@@ -215,12 +240,33 @@ router.put('/:id', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Not authorized to update this profile' });
     }
 
+    const updateData = {};
+    if (displayName !== undefined) updateData.displayName = displayName;
+    if (bio !== undefined) updateData.bio = bio;
+    if (avatar !== undefined) updateData.avatar = avatar;
+    if (isPrivate !== undefined) updateData.isPrivate = isPrivate;
+
+    // If privacy setting is changing, use a transaction
+    if (isPrivate !== undefined) {
+      await prisma.$transaction([
+        prisma.user.update({
+          where: { id: userId },
+          data: { isPrivate: isPrivate },
+        }),
+        prisma.post.updateMany({
+          where: { authorId: userId },
+          data: { isPublic: !isPrivate },
+        }),
+      ]);
+    }
+
+    // Update other user data
     const user = await prisma.user.update({
       where: { id: userId },
       data: {
-        displayName,
-        bio,
-        avatar
+        displayName: displayName,
+        bio: bio,
+        avatar: avatar,
       },
       select: {
         id: true,
@@ -230,6 +276,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
         bio: true,
         avatar: true,
         verified: true,
+        isPrivate: true,
         createdAt: true
       }
     });
