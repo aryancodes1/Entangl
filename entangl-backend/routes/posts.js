@@ -213,47 +213,46 @@ router.get('/', optionalAuth, async (req, res) => {
 
 // POST create post
 router.post('/', authenticateToken, async (req, res) => {
-  try {
-    const { content, imageUrl, hashtags } = req.body;
-    const user = req.user;
-    
-    console.log('Creating post with data:', { content, imageUrl, hashtags, userId: user.id });
-    
-    // Allow posts with either content or image (or both)
-    if (!content && !imageUrl) {
-      return res.status(400).json({ 
-        error: 'Post must have content or image',
-        details: 'Please provide either text content or an image for your post'
-      });
-    }
+  const { content, imageUrl, hashtags, prediction, confidence } = req.body;
+  const user = req.user;
 
-    // Validate content length if provided
-    if (content && content.length > 280) {
-      return res.status(400).json({ 
-        error: 'Content too long',
-        details: 'Posts must be 280 characters or less'
-      });
-    }
+  if (!content && !imageUrl) {
+    return res.status(400).json({ 
+      error: 'Post must have content or image',
+      details: 'Please provide either text content or an image for your post'
+    });
+  }
 
-    const hashtagOps = [];
-    if (hashtags) {
-      const hashtagNames = hashtags.split(/[\s#]+/).filter(Boolean);
-      if (hashtagNames.length > 0) {
-        for (const name of hashtagNames) {
-          hashtagOps.push({
-            where: { name },
-            create: { name },
-          });
-        }
+  // Validate content length if provided
+  if (content && content.length > 280) {
+    return res.status(400).json({ 
+      error: 'Content too long',
+      details: 'Posts must be 280 characters or less'
+    });
+  }
+
+  const hashtagOps = [];
+  if (hashtags) {
+    const hashtagNames = hashtags.split(/[\s#]+/).filter(Boolean);
+    if (hashtagNames.length > 0) {
+      for (const name of hashtagNames) {
+        hashtagOps.push({
+          where: { name },
+          create: { name },
+        });
       }
     }
+  }
 
+  try {
     const post = await prisma.post.create({
       data: {
         content: content || null, // Allow null content if there's an image
         imageUrl: imageUrl || null,
         authorId: user.id,
         isPublic: !user.isPrivate,
+        prediction: prediction,
+        confidence: confidence,
         ...(hashtagOps.length > 0 && {
           hashtags: {
             connectOrCreate: hashtagOps,
@@ -368,30 +367,65 @@ router.put('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// DELETE post
-router.delete('/:id', authenticateToken, async (req, res) => {
-  try {
-    const postId = req.params.id;
+// PATCH update post for specific fields like prediction
+router.patch('/:id', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { prediction, confidence } = req.body;
+  const user = req.user;
 
-    const existingPost = await prisma.post.findUnique({
-      where: { id: postId }
+  try {
+    const post = await prisma.post.findUnique({
+      where: { id },
     });
 
-    if (!existingPost) {
+    if (!post) {
       return res.status(404).json({ error: 'Post not found' });
     }
 
-    if (existingPost.authorId !== req.user.id) {
+    // In a real app, you might want to restrict who can trigger a check,
+    // but for now, any authenticated user can.
+    
+    const updatedPost = await prisma.post.update({
+      where: { id },
+      data: {
+        prediction,
+        confidence,
+      },
+    });
+
+    res.json(updatedPost);
+  } catch (error) {
+    console.error('Error updating post with prediction:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DELETE post
+router.delete('/:id', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const user = req.user;
+
+  try {
+    const post = await prisma.post.findUnique({
+      where: { id },
+    });
+
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    if (post.authorId !== user.id) {
       return res.status(403).json({ error: 'Not authorized to delete this post' });
     }
 
     await prisma.post.delete({
-      where: { id: postId }
+      where: { id },
     });
 
     res.json({ message: 'Post deleted successfully' });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error('Error deleting post:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

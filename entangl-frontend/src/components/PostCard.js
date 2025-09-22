@@ -40,6 +40,7 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
   const [newComment, setNewComment] = useState('');
   const [loadingComments, setLoadingComments] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [prediction, setPrediction] = useState(post.prediction ? { isFake: post.prediction === 'fake', confidence: post.confidence } : null);
 
   const handleDeleteComment = async (commentId) => {
     if (window.confirm('Are you sure you want to delete this comment?')) {
@@ -278,6 +279,30 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
                   className="w-full max-h-[500px] object-cover"
                   loading="lazy"
                 />
+              </div>
+            )}
+
+            {/* Authenticity Status */}
+            {prediction && (
+              <div className={`mt-3 p-3 rounded-lg border ${
+                prediction.isFake 
+                  ? 'bg-red-500/10 border-red-500/30 text-red-400' 
+                  : 'bg-green-500/10 border-green-500/30 text-green-400'
+              }`}>
+                <div className="flex items-center space-x-2">
+                  <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    {prediction.isFake 
+                      ? <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-4a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clipRule="evenodd" />
+                      : <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    }
+                  </svg>
+                  <p className="text-sm font-semibold">
+                    {prediction.isFake ? 'Potentially Misleading' : 'Appears Authentic'}
+                    <span className="font-normal opacity-80 ml-1">
+                      ({(prediction.confidence * 100).toFixed(0)}% confidence)
+                    </span>
+                  </p>
+                </div>
               </div>
             )}
           </div>

@@ -99,6 +99,19 @@ export default function CreatePost({ onPostCreated }) {
         imageUrl: imageUrl,
         hashtags: hashtags.trim(),
       };
+      
+      // Perform authenticity check and add to postData
+      try {
+        // In a real app, this would be an API call to your prediction service
+        const isFake = Math.random() > 0.5;
+        const confidence = Math.random() * (0.98 - 0.75) + 0.75;
+        postData.prediction = isFake ? "fake" : "real";
+        postData.confidence = confidence;
+      } catch (predictionError) {
+        console.error("Could not generate authenticity prediction:", predictionError);
+        // Decide if you want to block posting or post without prediction
+        // For now, we'll post without it
+      }
 
       console.log('Sending post data:', postData);
 

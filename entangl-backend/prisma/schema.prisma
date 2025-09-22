@@ -32,19 +32,21 @@ model User {
 }
 
 model Post {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  content   String?  // Allow null content for image-only posts
-  imageUrl  String?  // Allow null for text-only posts
-  authorId  String   @db.ObjectId
-  isPublic  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  content    String?  // Allow null content for image-only posts
+  imageUrl   String?  // Allow null for text-only posts
+  authorId   String    @db.ObjectId
+  isPublic   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  prediction String?   // e.g., "real", "fake", "uncertain"
+  confidence Float?    // e.g., 0.95
 
   // Relations
-  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  likes    Like[]
-  comments Comment[]
-  hashtags Hashtag[] @relation(fields: [hashtagIds], references: [id])
+  author     User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes      Like[]
+  comments    Comment[]
+  hashtags   Hashtag[] @relation(fields: [hashtagIds], references: [id])
   hashtagIds String[] @db.ObjectId
 
   @@map("posts")
