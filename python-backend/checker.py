@@ -569,7 +569,7 @@ class FactCheckerSystem:
             return result
 
 async def main():
-    api_key = "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"  
+    api_key = ""  
     fact_checker = FactCheckerSystem(api_key=api_key)
     statement = "trump is the president of the usa"
     result = await fact_checker.verify_statement(statement)
