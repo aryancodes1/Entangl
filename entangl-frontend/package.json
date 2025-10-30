@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@next/swc-darwin-arm64": "^15.5.5",
     "next": "15.5.2",
     "next-auth": "^4.24.11",
     "nodemailer": "^6.10.1",

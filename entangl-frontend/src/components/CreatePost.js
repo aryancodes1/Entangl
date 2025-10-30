@@ -102,15 +102,49 @@ export default function CreatePost({ onPostCreated }) {
       
       // Perform authenticity check and add to postData
       try {
-        // In a real app, this would be an API call to your prediction service
-        const isFake = Math.random() > 0.5;
-        const confidence = Math.random() * (0.98 - 0.75) + 0.75;
-        postData.prediction = isFake ? "fake" : "real";
-        postData.confidence = confidence;
+        if (content.trim()) {
+          // Call the Python backend for fact-checking
+          const predictionResponse = await fetch('http://localhost:8000/predict/text', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content: content.trim() }),
+          });
+
+          if (predictionResponse.ok) {
+            const predictionData = await predictionResponse.json();
+            postData.prediction = predictionData.prediction;
+            postData.confidence = parseFloat(predictionData.confidence);
+            
+            // Add additional fact-check data if available
+            if (predictionData.explanation) {
+              postData.factCheckDetails = {
+                explanation: predictionData.explanation,
+                facts_found: predictionData.facts_found || [],
+                inaccuracies: predictionData.inaccuracies || [],
+                missing_context: predictionData.missing_context || "",
+                sources: predictionData.sources || []
+              };
+            }
+            
+            console.log('Fact-check result:', predictionData);
+          } else {
+            console.error('Fact-check API error:', predictionResponse.status);
+            // Fallback to unknown prediction
+            postData.prediction = "unknown";
+            postData.confidence = 0.0;
+          }
+        } else {
+          // No text content to check
+          postData.prediction = "unknown";
+          postData.confidence = 0.0;
+        }
       } catch (predictionError) {
         console.error("Could not generate authenticity prediction:", predictionError);
-        // Decide if you want to block posting or post without prediction
-        // For now, we'll post without it
+        // Fallback for network errors
+        postData.prediction = "unknown";
+        postData.confidence = 0.0;
       }
 
       console.log('Sending post data:', postData);

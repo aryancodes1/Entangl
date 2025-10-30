@@ -40,7 +40,16 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
   const [newComment, setNewComment] = useState('');
   const [loadingComments, setLoadingComments] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [prediction, setPrediction] = useState(post.prediction ? { isFake: post.prediction === 'fake', confidence: post.confidence } : null);
+  const [prediction, setPrediction] = useState(post.prediction ? { 
+    isFake: post.prediction === 'fake', 
+    confidence: post.confidence,
+    explanation: post.factCheckDetails?.explanation,
+    facts_found: post.factCheckDetails?.facts_found || [],
+    inaccuracies: post.factCheckDetails?.inaccuracies || [],
+    missing_context: post.factCheckDetails?.missing_context,
+    sources: post.factCheckDetails?.sources || []
+  } : null);
+  const [showFactCheckDetails, setShowFactCheckDetails] = useState(false);
 
   const handleDeleteComment = async (commentId) => {
     if (window.confirm('Are you sure you want to delete this comment?')) {
@@ -287,22 +296,118 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
               <div className={`mt-3 p-3 rounded-lg border ${
                 prediction.isFake 
                   ? 'bg-red-500/10 border-red-500/30 text-red-400' 
+                  : prediction.confidence < 0.7
+                  ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
                   : 'bg-green-500/10 border-green-500/30 text-green-400'
               }`}>
-                <div className="flex items-center space-x-2">
-                  <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    {prediction.isFake 
-                      ? <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-4a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clipRule="evenodd" />
-                      : <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    }
-                  </svg>
-                  <p className="text-sm font-semibold">
-                    {prediction.isFake ? 'Potentially Misleading' : 'Appears Authentic'}
-                    <span className="font-normal opacity-80 ml-1">
-                      ({(prediction.confidence * 100).toFixed(0)}% confidence)
-                    </span>
-                  </p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      {prediction.isFake 
+                        ? <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-4a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clipRule="evenodd" />
+                        : prediction.confidence < 0.7
+                        ? <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-4a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clipRule="evenodd" />
+                        : <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      }
+                    </svg>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold">
+                        {prediction.isFake 
+                          ? 'Potentially Misleading' 
+                          : prediction.confidence < 0.7
+                          ? 'Uncertain Authenticity'
+                          : 'Appears Authentic'}
+                        <span className="font-normal opacity-80 ml-1">
+                          ({((prediction.confidence || 0) * 100).toFixed(0)}% confidence)
+                        </span>
+                      </p>
+                      {prediction.explanation && (
+                        <p className="text-xs opacity-80 mt-1 line-clamp-2">
+                          {prediction.explanation.slice(0, 100)}...
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {(prediction.explanation || prediction.facts_found?.length > 0 || prediction.sources?.length > 0) && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowFactCheckDetails(!showFactCheckDetails);
+                      }}
+                      className="ml-2 text-xs opacity-80 hover:opacity-100 transition-opacity flex items-center space-x-1"
+                    >
+                      <span>{showFactCheckDetails ? 'Hide' : 'Details'}</span>
+                      <svg className={`w-4 h-4 transition-transform ${showFactCheckDetails ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
+                
+                {/* Detailed fact-check information */}
+                {showFactCheckDetails && (
+                  <div className="mt-3 pt-3 border-t border-current/20 text-xs space-y-2">
+                    {prediction.explanation && (
+                      <div>
+                        <p className="font-semibold mb-1">Analysis:</p>
+                        <p className="opacity-90">{prediction.explanation}</p>
+                      </div>
+                    )}
+                    
+                    {prediction.facts_found?.length > 0 && (
+                      <div>
+                        <p className="font-semibold mb-1">Facts Found:</p>
+                        <ul className="list-disc list-inside opacity-90 space-y-1">
+                          {prediction.facts_found.slice(0, 3).map((fact, index) => (
+                            <li key={index}>{fact}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {prediction.inaccuracies?.length > 0 && (
+                      <div>
+                        <p className="font-semibold mb-1 text-red-400">Potential Issues:</p>
+                        <ul className="list-disc list-inside opacity-90 space-y-1">
+                          {prediction.inaccuracies.slice(0, 3).map((inaccuracy, index) => (
+                            <li key={index}>{inaccuracy}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {prediction.missing_context && (
+                      <div>
+                        <p className="font-semibold mb-1">Missing Context:</p>
+                        <p className="opacity-90">{prediction.missing_context}</p>
+                      </div>
+                    )}
+                    
+                    {prediction.sources?.length > 0 && (
+                      <div>
+                        <p className="font-semibold mb-1">Sources Checked:</p>
+                        <div className="space-y-1">
+                          {prediction.sources.slice(0, 2).map((source, index) => (
+                            <a 
+                              key={index} 
+                              href={source} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="block opacity-90 hover:opacity-100 underline truncate"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {new URL(source).hostname}
+                            </a>
+                          ))}
+                          {prediction.sources.length > 2 && (
+                            <p className="opacity-70">+{prediction.sources.length - 2} more sources</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
