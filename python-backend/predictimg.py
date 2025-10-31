@@ -4,9 +4,7 @@ import matplotlib.pyplot as plt
 import os
 import tensorflow as tf
 print(f"TensorFlow version: {tf.__version__}")
-# Configure TensorFlow for CPU compatibilit
 
-# Try to import TensorFlow Quantum with fallback
 try:
     import cirq
     import tensorflow_quantum as tfq
@@ -20,9 +18,9 @@ except ImportError as e:
 import joblib
 import torch
 import torchvision.transforms as T
-from keras.models import load_model
 from facenet_pytorch import InceptionResnetV1
 import random
+import sympy
 
 
 def feature_vector_to_circuit_layers(features, qubits):
@@ -248,13 +246,60 @@ def predict_video_consistent(
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {device}")
 
+def build_pqc_circuit_layers(qubits, n_layers=1):
+    """
+    Build a parameterized quantum circuit (ansatz) for multiple layers.
+    Each qubit has a trainable theta per layer.
+    """
+    circuit = cirq.Circuit()
+    symbols = []
+
+    for l in range(n_layers):
+        for i, q in enumerate(qubits):
+            theta = sympy.Symbol(f'theta_{l}_{i}')
+            circuit.append(cirq.rx(theta)(q))
+            symbols.append(theta)
+        # Add entanglement (CZ) after each layer
+        for i in range(len(qubits)-1):
+            circuit.append(cirq.CZ(qubits[i], qubits[i+1]))
+    return circuit, symbols
+
+def create_tfq_model_layers(n_qubits=8, n_layers=64, learning_rate=1e-3):
+    """
+    Rebuild the same architecture as in training (for inference).
+    """
+    # Qubit layout
+    qubits = [cirq.GridQubit(0, i) for i in range(n_qubits)]
+    pqc_circuit, symbols = build_pqc_circuit_layers(qubits, n_layers)
+    readout = cirq.Z(qubits[0])
+
+    # Functional API (must match)
+    inputs = tf.keras.Input(shape=(), dtype=tf.string)
+    x = tfq.layers.PQC(pqc_circuit, readout)(inputs)
+    outputs = tf.keras.layers.Dense(
+        1,
+        activation="sigmoid",
+        kernel_initializer="glorot_uniform",
+        bias_initializer="zeros"
+    )(x)
+
+    model = tf.keras.Model(inputs=inputs, outputs=outputs)
+
+    # Compile (same optimizer and loss)
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(learning_rate),
+        loss="binary_crossentropy",
+        metrics=["accuracy"]
+    )
+    return model
+
 try:
     scaler = joblib.load("/Users/arunkaul/Desktop/MyFiles/Entangl/python-backend/scaler.joblib")
     embedder_model = get_facenet_feature_extractor().to(device)
     
     if TFQ_AVAILABLE:
-        model = load_model("/Users/arunkaul/Desktop/MyFiles/Entangl/python-backend/tfq_face_layers_weights.h5", 
-                          custom_objects={'PQC': tfq.layers.PQC})
+        model = create_tfq_model_layers(n_qubits=8, n_layers=12, learning_rate=1e-3)
+        model.load_weights("/Users/arunkaul/Desktop/MyFiles/Entangl/python-backend/tfq_face_layers_weights.h5")
         print("TFQ model loaded successfully")
     else:
         model = None
