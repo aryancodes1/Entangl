@@ -22,7 +22,6 @@ from facenet_pytorch import InceptionResnetV1
 import random
 import sympy
 
-
 def feature_vector_to_circuit_layers(features, qubits):
     circuit = cirq.Circuit()
     n_qubits = len(qubits)
@@ -155,8 +154,6 @@ def detect_faces_upper_half(frame):
 # -------------------
 # Main prediction pipeline
 # -------------------
-
-
 def predict_video_consistent(
     video_path,
     model,
@@ -173,9 +170,12 @@ def predict_video_consistent(
     """
     if not TFQ_AVAILABLE:
         print("TensorFlow Quantum not available. Cannot perform quantum prediction.")
-        return 0.5, "tfq_unavailable"
+        raise Exception("tfq_unavailable")
     
     cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        raise Exception("Could not open video file")
+        
     fps = int(cap.get(cv2.CAP_PROP_FPS))
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
@@ -205,12 +205,12 @@ def predict_video_consistent(
                 # --- Face augmentation ---
                 face_aug = augment_face(face_crop)
 
-                # --- Optional visualization ---
-                plt.figure(figsize=(2, 2))
-                plt.imshow(cv2.cvtColor(face_aug, cv2.COLOR_BGR2RGB))
-                plt.axis("off")
-                plt.title(f"Face {faces_collected + 1} (aug)")
-                plt.show()
+                # --- Skip visualization for API ---
+                # plt.figure(figsize=(2, 2))
+                # plt.imshow(cv2.cvtColor(face_aug, cv2.COLOR_BGR2RGB))
+                # plt.axis("off")
+                # plt.title(f"Face {faces_collected + 1} (aug)")
+                # plt.show()
 
                 # --- FaceNet embedding ---
                 face_t = facenet_transform(face_aug).unsqueeze(0).to(device)
@@ -225,7 +225,7 @@ def predict_video_consistent(
     cap.release()
 
     if not face_embeddings:
-        return 0.0, "no_face_detected"
+        raise Exception("no_face_detected")
 
     X_scaled = scaler.transform(face_embeddings)
 
@@ -238,7 +238,7 @@ def predict_video_consistent(
 
     # --- Majority voting ---
     num_fake = np.sum(probs > 0.5)
-    label = "fake" if num_fake > len(probs) / 3 else "real"
+    label = "fake" if avg_prob > 0.5 else "real"
 
     return avg_prob, label
 
@@ -312,7 +312,7 @@ except Exception as e:
         print("Try installing compatible versions: pip install tensorflow==2.8.0 tensorflow-quantum==0.7.2")
     exit(1)
 
-if TFQ_AVAILABLE and model is not None:
+"""if TFQ_AVAILABLE and model is not None:
     video_path = "/Users/arunkaul/Desktop/MyFiles/Entangl/python-backend/01__hugging_happy.mp4"
 
     prob, label = predict_video_consistent(
@@ -328,4 +328,4 @@ if TFQ_AVAILABLE and model is not None:
 
     print(f"Prediction: {label} (prob={prob:.4f})")
 else:
-    print("Cannot run prediction without TensorFlow Quantum. Please fix compatibility issues.")
+    print("Cannot run prediction without TensorFlow Quantum. Please fix compatibility issues.")"""

@@ -1,98 +1,78 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import Dict
-from checker import FactCheckerSystem
+from typing import Dict, Any, List
+from contextlib import asynccontextmanager
 import asyncio
 from dotenv import load_dotenv
 import os
+import tempfile
+import shutil
+from pathlib import Path
+import joblib
+import torch
 
 # Load environment variables from .env file
 load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-# Create a FastAPI app instance
-app = FastAPI(title="Fake News and Image Detector API")
 
-# Initialize fact checker system
+# Import your prediction modules
+from predictimg import (
+    predict_video_consistent,
+    get_facenet_feature_extractor,
+    create_tfq_model_layers,
+    TFQ_AVAILABLE,
+    device
+)
 
-fact_checker = FactCheckerSystem(api_key=GROQ_API_KEY)
+# Global variables for models
+scaler = None
+embedder_model = None
+tfq_model = None
 
-# Define Pydantic models for request bodies
-class NewsContent(BaseModel):
-    content: str
-
-class ImageURL(BaseModel):
-    image_url: str
-
-# Create a POST route for text content analysis
-@app.post("/predict/text", response_model=Dict)
-async def predict_text(payload: NewsContent):
-    """
-    Analyzes a piece of text content to determine if it's real or fake news using fact-checking.
-    """
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Load models on startup and cleanup on shutdown"""
+    global scaler, embedder_model, tfq_model
+    
+    # Startup
     try:
-        result = await fact_checker.verify_statement(payload.content)
+        # Load scaler
+        scaler = joblib.load("/Users/arunkaul/Desktop/MyFiles/Entangl/python-backend/scaler.joblib")
+        print("✓ Scaler loaded successfully")
         
-        # Map the fact checker result to our API response format
-        if result["is_correct"] is True:
-            prediction = "real"
-        elif result["is_correct"] is False:
-            prediction = "fake"
+        # Load FaceNet embedder
+        embedder_model = get_facenet_feature_extractor().to(device)
+        print("✓ FaceNet embedder loaded successfully")
+        
+        # Load TFQ model if available
+        if TFQ_AVAILABLE:
+            tfq_model = create_tfq_model_layers(n_qubits=8, n_layers=12, learning_rate=1e-3)
+            tfq_model.load_weights("/Users/arunkaul/Desktop/MyFiles/Entangl/python-backend/tfq_face_layers_weights.h5")
+            print("✓ TFQ model loaded successfully")
         else:
-            prediction = "unknown"
+            print("⚠ TensorFlow Quantum not available - quantum features disabled")
         
-        # Map confidence levels to numeric values
-        confidence_mapping = {
-            "high": "0.90",
-            "medium": "0.70", 
-            "low": "0.40",
-            "none": "0.00"
-        }
-        confidence = confidence_mapping.get(result["confidence"], "0.00")
-        
-        return {
-            "prediction": prediction,
-            "confidence": confidence,
-            "explanation": result["explanation"],
-            "facts_found": result["facts_found"],
-            "inaccuracies": result["inaccuracies"],
-            "missing_context": result["missing_context"],
-            "sources": result["sources"],
-            "token_usage": result.get("token_usage", {})
-        }
+        print(f"✓ All models loaded. Using device: {device}")
         
     except Exception as e:
-        return {
-            "prediction": "error",
-            "confidence": "0.00",
-            "explanation": f"Error during fact checking: {str(e)}",
-            "facts_found": [],
-            "inaccuracies": [],
-            "missing_context": "Could not complete fact check",
-            "sources": [],
-            "token_usage": {}
-        }
+        print(f"❌ Error loading models: {e}")
+        raise e
+    
+    yield
+    
+    # Shutdown (cleanup if needed)
+    print("🔄 Shutting down...")
 
-# Create a POST route for image URL analysis
-@app.post("/predict/image", response_model=Dict[str, str])
-async def predict_image(payload: ImageURL):
-    """
-    Analyzes an image from a URL to determine if it's fake.
-    (Currently a placeholder)
-    """
-    # TODO: Implement actual image analysis logic here.
-    is_fake = "real" # Dummy prediction
-    confidence = "0.88" # Dummy confidence score
+# Create a FastAPI app instance with lifespan
+app = FastAPI(
+    title="Fake News and Image Detector API",
+    lifespan=lifespan
+)
 
-    return {"prediction": is_fake, "confidence": confidence}
-
-# Optional: Add a root endpoint for basic API health check
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to the Fake News and Image Detector API"}
-
-# Add CORS middleware to allow frontend requests
-from fastapi.middleware.cors import CORSMiddleware
+# --- CORS Middleware ---
 
 app.add_middleware(
     CORSMiddleware,
@@ -102,6 +82,187 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- Deepfake Detection API ---
+
+@app.get("/")
+async def root():
+    """Health check endpoint"""
+    return {
+        "message": "Deepfake Detection API",
+        "status": "running",
+        "tfq_available": TFQ_AVAILABLE,
+        "device": device
+    }
+
+@app.get("/health")
+async def health_check():
+    """Detailed health check"""
+    return {
+        "status": "healthy",
+        "models_loaded": {
+            "scaler": scaler is not None,
+            "embedder": embedder_model is not None,
+            "tfq_model": tfq_model is not None
+        },
+        "tfq_available": TFQ_AVAILABLE,
+        "device": device
+    }
+
+@app.post("/predict")
+async def predict_deepfake(
+    file: UploadFile = File(...),
+    max_faces: int = 20,
+    seconds_range: int = 6
+) -> Dict[str, Any]:
+    """
+    Analyze uploaded video for deepfake detection
+    
+    Args:
+        file: MP4 video file
+        max_faces: Maximum number of faces to analyze per video (default: 20)
+        seconds_range: Seconds from end of video to analyze (default: 6)
+    
+    Returns:
+        JSON response with prediction results
+    """
+    
+    # Validate file type
+    if not file.filename.lower().endswith(('.mp4', '.avi', '.mov', '.mkv')):
+        raise HTTPException(
+            status_code=400, 
+            detail="Invalid file type. Please upload a video file (mp4, avi, mov, mkv)."
+        )
+    
+    # Check if models are loaded
+    if not all([scaler, embedder_model]):
+        raise HTTPException(
+            status_code=503,
+            detail="Models not loaded. Please try again later."
+        )
+    
+    if not TFQ_AVAILABLE or tfq_model is None:
+        raise HTTPException(
+            status_code=503,
+            detail="TensorFlow Quantum not available. Quantum prediction disabled."
+        )
+    
+    # Create temporary file
+    temp_dir = tempfile.mkdtemp()
+    temp_file_path = None
+    
+    try:
+        # Save uploaded file temporarily
+        temp_file_path = os.path.join(temp_dir, f"temp_video_{file.filename}")
+        
+        with open(temp_file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        # Run prediction
+        prob, label = predict_video_consistent(
+            video_path=temp_file_path,
+            model=tfq_model,
+            scaler=scaler,
+            embedder_model=embedder_model,
+            n_qubits=8,
+            max_faces_per_video=max_faces,
+            seconds_range=seconds_range,
+            device=device
+        )
+        
+        # Prepare response
+        response = {
+            "filename": file.filename,
+            "prediction": {
+                "label": label,
+                "is_deepfake": label == "fake",
+                "deepfake_probability": round(prob, 4) if label == "real" else round(1 - prob, 4)
+            },
+            "analysis_parameters": {
+                "max_faces_analyzed": max_faces,
+                "seconds_analyzed": seconds_range,
+                "quantum_enhanced": True,
+                "device_used": device
+            },
+            "status": "success"
+        }
+        
+        return JSONResponse(content=response)
+        
+    except Exception as e:
+        print(f"Error during prediction: {e}")
+        
+        # Handle specific error cases
+        if str(e) == "no_face_detected":
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "error": "No faces detected in the video",
+                    "filename": file.filename,
+                    "status": "error"
+                }
+            )
+        elif str(e) == "tfq_unavailable":
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "error": "TensorFlow Quantum unavailable",
+                    "filename": file.filename,
+                    "status": "error"
+                }
+            )
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Internal server error during prediction: {str(e)}"
+            )
+    
+    finally:
+        # Cleanup temporary files
+        try:
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
+            if os.path.exists(temp_dir):
+                os.rmdir(temp_dir)
+        except Exception as cleanup_error:
+            print(f"Warning: Failed to cleanup temporary files: {cleanup_error}")
+
+@app.post("/predict-batch")
+async def predict_batch(files: List[UploadFile] = File(...)):
+    """
+    Analyze multiple videos for deepfake detection
+    """
+    if len(files) > 10:  # Limit batch size
+        raise HTTPException(
+            status_code=400,
+            detail="Too many files. Maximum 10 files per batch."
+        )
+    
+    results = []
+    
+    for file in files:
+        try:
+            # Call single prediction for each file
+            result = await predict_deepfake(file)
+            results.append(result)
+        except Exception as e:
+            results.append({
+                "filename": file.filename,
+                "error": str(e),
+                "status": "error"
+            })
+    
+    return {
+        "batch_results": results,
+        "total_files": len(files),
+        "successful_predictions": len([r for r in results if r.get("status") == "success"])
+    }
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(
+        "main:app", 
+        host="0.0.0.0", 
+        port=8000, 
+        reload=True,
+        log_level="info"
+    )
