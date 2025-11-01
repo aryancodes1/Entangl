@@ -134,6 +134,47 @@ export default function CreatePost({ onPostCreated }) {
     }
   };
 
+  const checkImageAuthenticity = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('max_faces', '5');
+
+      const response = await fetch('http://localhost:8000/predict/image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        return {
+          prediction: result.prediction.is_deepfake ? 'fake' : 'real',
+          confidence: result.prediction.is_deepfake ? 
+            result.prediction.deepfake_probability : 
+            (1 - result.prediction.deepfake_probability),
+          imageAnalysis: {
+            faces_found: result.analysis_parameters.faces_found,
+            quantum_enhanced: result.analysis_parameters.quantum_enhanced
+          }
+        };
+      } else {
+        console.error('Image authenticity check failed:', response.status);
+        return {
+          prediction: 'unknown',
+          confidence: 0.0,
+          error: 'Analysis failed'
+        };
+      }
+    } catch (error) {
+      console.error('Error checking image authenticity:', error);
+      return {
+        prediction: 'unknown',
+        confidence: 0.0,
+        error: error.message
+      };
+    }
+  };
+
   const handleNext = () => {
     if (step === 1 && (!content.trim() && !imageFile && !videoFile)) {
       return;
@@ -218,6 +259,23 @@ export default function CreatePost({ onPostCreated }) {
           }
           
           console.log('Video analysis result:', videoAnalysis);
+        } else if (imageFile) {
+          // Check image authenticity using Python backend
+          console.log('Checking image authenticity...');
+          const imageAnalysis = await checkImageAuthenticity(imageFile);
+          postData.prediction = imageAnalysis.prediction;
+          postData.confidence = parseFloat(imageAnalysis.confidence);
+          
+          if (imageAnalysis.imageAnalysis) {
+            postData.factCheckDetails = {
+              type: 'image_deepfake_analysis',
+              faces_found: imageAnalysis.imageAnalysis.faces_found,
+              quantum_enhanced: imageAnalysis.imageAnalysis.quantum_enhanced,
+              error: imageAnalysis.error
+            };
+          }
+          
+          console.log('Image analysis result:', imageAnalysis);
         } else {
           // No content to check
           postData.prediction = "unknown";

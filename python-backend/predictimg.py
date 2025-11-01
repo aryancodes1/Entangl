@@ -329,3 +329,93 @@ except Exception as e:
     print(f"Prediction: {label} (prob={prob:.4f})")
 else:
     print("Cannot run prediction without TensorFlow Quantum. Please fix compatibility issues.")"""
+
+def detect_faces_in_image(image):
+    """Detect faces in a single image."""
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    # Apply CLAHE and blur for better detection
+    clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
+    gray = clahe.apply(gray)
+    gray = cv2.GaussianBlur(gray, (3, 3), 0)
+    
+    faces = face_cascade.detectMultiScale(
+        gray,
+        scaleFactor=1.05,
+        minNeighbors=7,
+        minSize=(80, 80),
+        flags=cv2.CASCADE_SCALE_IMAGE
+    )
+    
+    if len(faces) == 0:
+        return []
+    
+    # Sort faces by size (largest first)
+    faces_sorted = sorted(faces, key=lambda face: face[2] * face[3], reverse=True)
+    return faces_sorted
+
+def predict_image_deepfake_single(
+    image_path,
+    model,
+    scaler,
+    embedder_model,
+    n_qubits=8,
+    max_faces=5,
+    device="cpu"
+):
+    """
+    Predict deepfake probability for a single image using FaceNet embeddings + TFQ layered encoding.
+    """
+    if not TFQ_AVAILABLE:
+        print("TensorFlow Quantum not available. Cannot perform quantum prediction.")
+        raise Exception("tfq_unavailable")
+    
+    # Load image
+    image = cv2.imread(image_path)
+    if image is None:
+        raise Exception("Could not load image file")
+    
+    # Detect faces
+    faces = detect_faces_in_image(image)
+    
+    if not faces:
+        raise Exception("no_face_detected")
+    
+    face_embeddings = []
+    faces_processed = 0
+    
+    with torch.no_grad():
+        for (x, y, w, h) in faces[:max_faces]:  # Limit to max_faces
+            face_crop = image[y:y+h, x:x+w]
+            if face_crop.size == 0:
+                continue
+            
+            # --- Face augmentation ---
+            face_aug = augment_face(face_crop)
+            
+            # --- FaceNet embedding ---
+            face_t = facenet_transform(face_aug).unsqueeze(0).to(device)
+            feat = embedder_model(face_t)
+            feat = feat.view(-1).cpu().numpy()  # shape (512,)
+            face_embeddings.append(feat)
+            faces_processed += 1
+    
+    if not face_embeddings:
+        raise Exception("no_face_detected")
+    
+    # Scale features
+    X_scaled = scaler.transform(face_embeddings)
+    
+    # Convert to quantum circuits
+    circuits, _ = batch_features_to_circuits_layers(X_scaled, n_qubits)
+    tfq_tensor = tfq.convert_to_tensor(circuits)
+    
+    # Predict
+    probs = model.predict(tfq_tensor, verbose=0).flatten()
+    print("Probabilities per face:", probs)
+    avg_prob = float(np.mean(probs))
+    
+    # Determine label
+    label = "fake" if avg_prob > 0.5 else "real"
+    
+    return avg_prob, label, faces_processed

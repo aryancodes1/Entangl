@@ -26,7 +26,8 @@ from predictimg import (
     get_facenet_feature_extractor,
     create_tfq_model_layers,
     TFQ_AVAILABLE,
-    device
+    device,
+    predict_image_deepfake_single
 )
 
 # Global variables for models
@@ -329,6 +330,152 @@ def simple_text_analysis(content: str) -> Dict[str, Any]:
         "inaccuracies": [],
         "missing_context": "More context and source verification recommended for accurate assessment.",
         "sources": []
+    }
+
+@app.post("/predict/image")
+async def predict_image_deepfake(
+    file: UploadFile = File(...),
+    max_faces: int = 5
+) -> Dict[str, Any]:
+    """
+    Analyze uploaded image for deepfake detection
+    
+    Args:
+        file: Image file (jpg, png, etc.)
+        max_faces: Maximum number of faces to analyze (default: 5)
+    
+    Returns:
+        JSON response with prediction results
+    """
+    
+    # Validate file type
+    if not file.filename.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.webp')):
+        raise HTTPException(
+            status_code=400, 
+            detail="Invalid file type. Please upload an image file (jpg, png, etc.)."
+        )
+    
+    # Check if models are loaded
+    if not all([scaler, embedder_model]):
+        raise HTTPException(
+            status_code=503,
+            detail="Models not loaded. Please try again later."
+        )
+    
+    if not TFQ_AVAILABLE or tfq_model is None:
+        raise HTTPException(
+            status_code=503,
+            detail="TensorFlow Quantum not available. Quantum prediction disabled."
+        )
+    
+    # Create temporary file
+    temp_dir = tempfile.mkdtemp()
+    temp_file_path = None
+    
+    try:
+        # Save uploaded file temporarily
+        temp_file_path = os.path.join(temp_dir, f"temp_image_{file.filename}")
+        
+        with open(temp_file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        # Run prediction
+        prob, label, faces_found = predict_image_deepfake_single(
+            image_path=temp_file_path,
+            model=tfq_model,
+            scaler=scaler,
+            embedder_model=embedder_model,
+            n_qubits=8,
+            max_faces=max_faces,
+            device=device
+        )
+        
+        # Prepare response
+        response = {
+            "filename": file.filename,
+            "prediction": {
+                "label": label,
+                "is_deepfake": label == "fake",
+                "deepfake_probability": round(prob, 4) if label == "real" else round(1 - prob, 4)
+            },
+            "analysis_parameters": {
+                "faces_found": faces_found,
+                "max_faces_analyzed": max_faces,
+                "quantum_enhanced": True,
+                "device_used": device
+            },
+            "status": "success"
+        }
+        
+        return JSONResponse(content=response)
+        
+    except Exception as e:
+        print(f"Error during image prediction: {e}")
+        
+        # Handle specific error cases
+        if str(e) == "no_face_detected":
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "error": "No faces detected in the image",
+                    "filename": file.filename,
+                    "status": "error"
+                }
+            )
+        elif str(e) == "tfq_unavailable":
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "error": "TensorFlow Quantum unavailable",
+                    "filename": file.filename,
+                    "status": "error"
+                }
+            )
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Internal server error during prediction: {str(e)}"
+            )
+    
+    finally:
+        # Cleanup temporary files
+        try:
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
+            if os.path.exists(temp_dir):
+                os.rmdir(temp_dir)
+        except Exception as cleanup_error:
+            print(f"Warning: Failed to cleanup temporary files: {cleanup_error}")
+
+@app.post("/predict/image-batch")
+async def predict_image_batch(files: List[UploadFile] = File(...)):
+    """
+    Analyze multiple images for deepfake detection
+    """
+    if len(files) > 10:  # Limit batch size
+        raise HTTPException(
+            status_code=400,
+            detail="Too many files. Maximum 10 files per batch."
+        )
+    
+    results = []
+    
+    for file in files:
+        try:
+            # Call single prediction for each file
+            result = await predict_image_deepfake(file)
+            results.append(result)
+        except Exception as e:
+            results.append({
+                "filename": file.filename,
+                "error": str(e),
+                "status": "error"
+            })
+    
+    return {
+        "batch_results": results,
+        "total_files": len(files),
+        "successful_predictions": len([r for r in results if r.get("status") == "success"])
     }
 
 if __name__ == "__main__":

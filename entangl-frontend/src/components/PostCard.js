@@ -328,9 +328,11 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
                       <p className="text-sm font-semibold">
                         {post.videoUrl && post.factCheckDetails?.type === 'video_deepfake_analysis'
                           ? (prediction.isFake ? 'Potential Deepfake Detected' : 'Video Appears Authentic')
+                          : post.imageUrl && post.factCheckDetails?.type === 'image_deepfake_analysis'
+                          ? (prediction.isFake ? 'Potential Deepfake Detected' : 'Image Appears Authentic')
                           : (prediction.isFake 
                             ? 'Potentially Misleading' 
-                            : prediction.confidence < 0.7
+                            : prediction.confidence < 0.4
                             ? 'Uncertain Authenticity'
                             : 'Appears Authentic')
                         }
@@ -346,6 +348,12 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
                       {post.factCheckDetails?.type === 'video_deepfake_analysis' && (
                         <p className="text-xs opacity-80 mt-1">
                           Analyzed {post.factCheckDetails.faces_analyzed} faces • {post.factCheckDetails.seconds_analyzed}s clip
+                          {post.factCheckDetails.quantum_enhanced && ' • Quantum Enhanced'}
+                        </p>
+                      )}
+                      {post.factCheckDetails?.type === 'image_deepfake_analysis' && (
+                        <p className="text-xs opacity-80 mt-1">
+                          Found {post.factCheckDetails.faces_found} faces
                           {post.factCheckDetails.quantum_enhanced && ' • Quantum Enhanced'}
                         </p>
                       )}
@@ -384,6 +392,19 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
                         <ul className="list-disc list-inside opacity-90 space-y-1">
                           <li>Faces analyzed: {post.factCheckDetails.faces_analyzed}</li>
                           <li>Video duration analyzed: {post.factCheckDetails.seconds_analyzed} seconds</li>
+                          <li>Processing: {post.factCheckDetails.quantum_enhanced ? 'Quantum Enhanced' : 'Standard'}</li>
+                          {post.factCheckDetails.error && (
+                            <li className="text-red-400">Note: {post.factCheckDetails.error}</li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {post.factCheckDetails?.type === 'image_deepfake_analysis' && (
+                      <div>
+                        <p className="font-semibold mb-1">Image Analysis Details:</p>
+                        <ul className="list-disc list-inside opacity-90 space-y-1">
+                          <li>Faces found: {post.factCheckDetails.faces_found}</li>
                           <li>Processing: {post.factCheckDetails.quantum_enhanced ? 'Quantum Enhanced' : 'Standard'}</li>
                           {post.factCheckDetails.error && (
                             <li className="text-red-400">Note: {post.factCheckDetails.error}</li>
