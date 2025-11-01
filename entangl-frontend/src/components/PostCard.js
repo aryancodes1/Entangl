@@ -291,6 +291,20 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
               </div>
             )}
 
+            {/* Video */}
+            {post.videoUrl && (
+              <div className={`${(post.content && post.content.trim()) || (post.hashtags && post.hashtags.length > 0) ? 'mt-3' : ''} rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700`}>
+                <video
+                  src={post.videoUrl}
+                  controls
+                  className="w-full max-h-[500px] object-cover"
+                  preload="metadata"
+                >
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+            )}
+
             {/* Authenticity Status */}
             {prediction && (
               <div className={`mt-3 p-3 rounded-lg border ${
@@ -312,11 +326,14 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
                     </svg>
                     <div className="flex-1">
                       <p className="text-sm font-semibold">
-                        {prediction.isFake 
-                          ? 'Potentially Misleading' 
-                          : prediction.confidence < 0.7
-                          ? 'Uncertain Authenticity'
-                          : 'Appears Authentic'}
+                        {post.videoUrl && post.factCheckDetails?.type === 'video_deepfake_analysis'
+                          ? (prediction.isFake ? 'Potential Deepfake Detected' : 'Video Appears Authentic')
+                          : (prediction.isFake 
+                            ? 'Potentially Misleading' 
+                            : prediction.confidence < 0.7
+                            ? 'Uncertain Authenticity'
+                            : 'Appears Authentic')
+                        }
                         <span className="font-normal opacity-80 ml-1">
                           ({((prediction.confidence || 0) * 100).toFixed(0)}% confidence)
                         </span>
@@ -324,6 +341,12 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
                       {prediction.explanation && (
                         <p className="text-xs opacity-80 mt-1 line-clamp-2">
                           {prediction.explanation.slice(0, 100)}...
+                        </p>
+                      )}
+                      {post.factCheckDetails?.type === 'video_deepfake_analysis' && (
+                        <p className="text-xs opacity-80 mt-1">
+                          Analyzed {post.factCheckDetails.faces_analyzed} faces • {post.factCheckDetails.seconds_analyzed}s clip
+                          {post.factCheckDetails.quantum_enhanced && ' • Quantum Enhanced'}
                         </p>
                       )}
                     </div>
@@ -352,6 +375,20 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
                       <div>
                         <p className="font-semibold mb-1">Analysis:</p>
                         <p className="opacity-90">{prediction.explanation}</p>
+                      </div>
+                    )}
+                    
+                    {post.factCheckDetails?.type === 'video_deepfake_analysis' && (
+                      <div>
+                        <p className="font-semibold mb-1">Video Analysis Details:</p>
+                        <ul className="list-disc list-inside opacity-90 space-y-1">
+                          <li>Faces analyzed: {post.factCheckDetails.faces_analyzed}</li>
+                          <li>Video duration analyzed: {post.factCheckDetails.seconds_analyzed} seconds</li>
+                          <li>Processing: {post.factCheckDetails.quantum_enhanced ? 'Quantum Enhanced' : 'Standard'}</li>
+                          {post.factCheckDetails.error && (
+                            <li className="text-red-400">Note: {post.factCheckDetails.error}</li>
+                          )}
+                        </ul>
                       </div>
                     )}
                     

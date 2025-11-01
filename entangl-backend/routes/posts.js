@@ -213,13 +213,13 @@ router.get('/', optionalAuth, async (req, res) => {
 
 // POST create post
 router.post('/', authenticateToken, async (req, res) => {
-  const { content, imageUrl, hashtags, prediction, confidence } = req.body;
+  const { content, imageUrl, videoUrl, hashtags, prediction, confidence, factCheckDetails } = req.body;
   const user = req.user;
 
-  if (!content && !imageUrl) {
+  if (!content && !imageUrl && !videoUrl) {
     return res.status(400).json({ 
-      error: 'Post must have content or image',
-      details: 'Please provide either text content or an image for your post'
+      error: 'Post must have content, image, or video',
+      details: 'Please provide either text content, an image, or a video for your post'
     });
   }
 
@@ -247,12 +247,14 @@ router.post('/', authenticateToken, async (req, res) => {
   try {
     const post = await prisma.post.create({
       data: {
-        content: content || null, // Allow null content if there's an image
+        content: content || null,
         imageUrl: imageUrl || null,
+        videoUrl: videoUrl || null,
         authorId: user.id,
         isPublic: !user.isPrivate,
         prediction: prediction,
         confidence: confidence,
+        factCheckDetails: factCheckDetails ? JSON.stringify(factCheckDetails) : null,
         ...(hashtagOps.length > 0 && {
           hashtags: {
             connectOrCreate: hashtagOps,
@@ -282,6 +284,7 @@ router.post('/', authenticateToken, async (req, res) => {
 
     res.status(201).json({
       ...post,
+      factCheckDetails: post.factCheckDetails ? JSON.parse(post.factCheckDetails) : null,
       isLiked: false,
       likes: post._count.likes,
       comments: post._count.comments

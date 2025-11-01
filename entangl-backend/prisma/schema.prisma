@@ -35,12 +35,14 @@ model Post {
   id         String    @id @default(auto()) @map("_id") @db.ObjectId
   content    String?  // Allow null content for image-only posts
   imageUrl   String?  // Allow null for text-only posts
+  videoUrl   String?  // Allow null for non-video posts
   authorId   String    @db.ObjectId
   isPublic   Boolean   @default(true)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   prediction String?   // e.g., "real", "fake", "uncertain"
   confidence Float?    // e.g., 0.95
+  factCheckDetails String? // JSON string for storing detailed fact-check results
 
   // Relations
   author     User      @relation(fields: [authorId], references: [id], onDelete: Cascade)

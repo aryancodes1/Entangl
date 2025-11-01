@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Dict, Any, List
+import json
+
 from contextlib import asynccontextmanager
 import asyncio
 from dotenv import load_dotenv
@@ -88,9 +90,6 @@ app.add_middleware(
 async def root():
     """Health check endpoint"""
     return {
-        "message": "Deepfake Detection API",
-        "status": "running",
-        "tfq_available": TFQ_AVAILABLE,
         "device": device
     }
 
@@ -255,6 +254,81 @@ async def predict_batch(files: List[UploadFile] = File(...)):
         "batch_results": results,
         "total_files": len(files),
         "successful_predictions": len([r for r in results if r.get("status") == "success"])
+    }
+
+# Pydantic models for request/response
+class TextPredictionRequest(BaseModel):
+    content: str
+
+@app.post("/predict/text")
+async def predict_text_authenticity(request: TextPredictionRequest) -> Dict[str, Any]:
+    """
+    Analyze text content for fact-checking and authenticity
+    
+    Args:
+        request: TextPredictionRequest with content to analyze
+    
+    Returns:
+        JSON response with prediction results
+    """
+    
+    if not request.content or not request.content.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Content cannot be empty"
+        )
+    
+    try:
+        # Simple keyword-based analysis for now
+        response = simple_text_analysis(request.content)
+        return JSONResponse(content=response)
+            
+    except Exception as e:
+        print(f"Error during text prediction: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error during text analysis: {str(e)}"
+        )
+
+def simple_text_analysis(content: str) -> Dict[str, Any]:
+    """
+    Simple keyword-based text analysis
+    """
+    content_lower = content.lower()
+    
+    # Simple heuristics for detecting potentially misleading content
+    misleading_keywords = [
+        'breaking', 'urgent', 'shocking', 'secret', 'they don\'t want you to know',
+        'miracle cure', 'doctors hate', 'banned', 'censored', 'wake up'
+    ]
+    
+    reliable_indicators = [
+        'according to', 'study shows', 'research indicates', 'data suggests',
+        'peer-reviewed', 'published in', 'scientists say'
+    ]
+    
+    misleading_score = sum(1 for keyword in misleading_keywords if keyword in content_lower)
+    reliable_score = sum(1 for indicator in reliable_indicators if indicator in content_lower)
+    
+    # Calculate prediction based on scores
+    if reliable_score > misleading_score and reliable_score > 0:
+        prediction = "reliable"
+        confidence = min(0.8, 0.5 + (reliable_score * 0.1))
+    elif misleading_score > reliable_score and misleading_score > 0:
+        prediction = "misleading"
+        confidence = min(0.8, 0.5 + (misleading_score * 0.1))
+    else:
+        prediction = "questionable"
+        confidence = 0.5
+    
+    return {
+        "prediction": prediction,
+        "confidence": confidence,
+        "explanation": f"Analysis based on content indicators. Found {reliable_score} reliability indicators and {misleading_score} potential red flags.",
+        "facts_found": [],
+        "inaccuracies": [],
+        "missing_context": "More context and source verification recommended for accurate assessment.",
+        "sources": []
     }
 
 if __name__ == "__main__":

@@ -6,10 +6,13 @@ export default function CreatePost({ onPostCreated }) {
   const [content, setContent] = useState('');
   const [hashtags, setHashtags] = useState('');
   const [imageFile, setImageFile] = useState(null);
+  const [videoFile, setVideoFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
+  const [videoPreview, setVideoPreview] = useState('');
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1); // 1: Content, 2: Hashtags, 3: Finalize
   const fileInputRef = useRef(null);
+  const videoInputRef = useRef(null);
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -19,10 +22,42 @@ export default function CreatePost({ onPostCreated }) {
         return;
       }
       
+      // Clear video if image is selected
+      if (videoFile) {
+        removeVideo();
+      }
+      
       setImageFile(file);
       const reader = new FileReader();
       reader.onload = (e) => {
         setImagePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleVideoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 50 * 1024 * 1024) { // 50MB limit for videos
+        alert('Video size should be less than 50MB');
+        return;
+      }
+      
+      if (!file.type.startsWith('video/')) {
+        alert('Please upload a valid video file');
+        return;
+      }
+      
+      // Clear image if video is selected
+      if (imageFile) {
+        removeImage();
+      }
+      
+      setVideoFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setVideoPreview(e.target.result);
       };
       reader.readAsDataURL(file);
     }
@@ -36,14 +71,71 @@ export default function CreatePost({ onPostCreated }) {
     }
   };
 
+  const removeVideo = () => {
+    setVideoFile(null);
+    setVideoPreview('');
+    if (videoInputRef.current) {
+      videoInputRef.current.value = '';
+    }
+  };
+
   const uploadImageToCloudinary = async (file) => {
     // For now, create a local object URL for testing
     // In production, you would upload to Cloudinary or another service
     return URL.createObjectURL(file);
   };
 
+  const uploadVideoToCloudinary = async (file) => {
+    // For now, create a local object URL for testing
+    // In production, you would upload to Cloudinary or another service
+    return URL.createObjectURL(file);
+  };
+
+  const checkVideoAuthenticity = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('max_faces', '20');
+      formData.append('seconds_range', '6');
+
+      const response = await fetch('http://localhost:8000/predict', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        return {
+          prediction: result.prediction.is_deepfake ? 'fake' : 'real',
+          confidence: result.prediction.is_deepfake ? 
+            result.prediction.deepfake_probability : 
+            (1 - result.prediction.deepfake_probability),
+          videoAnalysis: {
+            faces_analyzed: result.analysis_parameters.max_faces_analyzed,
+            seconds_analyzed: result.analysis_parameters.seconds_analyzed,
+            quantum_enhanced: result.analysis_parameters.quantum_enhanced
+          }
+        };
+      } else {
+        console.error('Video authenticity check failed:', response.status);
+        return {
+          prediction: 'unknown',
+          confidence: 0.0,
+          error: 'Analysis failed'
+        };
+      }
+    } catch (error) {
+      console.error('Error checking video authenticity:', error);
+      return {
+        prediction: 'unknown',
+        confidence: 0.0,
+        error: error.message
+      };
+    }
+  };
+
   const handleNext = () => {
-    if (step === 1 && (!content.trim() && !imageFile)) {
+    if (step === 1 && (!content.trim() && !imageFile && !videoFile)) {
       return;
     }
     setStep(step + 1);
@@ -56,17 +148,22 @@ export default function CreatePost({ onPostCreated }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!content.trim() && !imageFile) {
+    if (!content.trim() && !imageFile && !videoFile) {
       return;
     }
 
     setLoading(true);
     try {
       let imageUrl = null;
+      let videoUrl = null;
       
-      // Upload image if present
+      // Upload media if present
       if (imageFile) {
         imageUrl = await uploadImageToCloudinary(imageFile);
+      }
+      
+      if (videoFile) {
+        videoUrl = await uploadVideoToCloudinary(videoFile);
       }
 
       // Check authentication - try to get token first
@@ -97,46 +194,32 @@ export default function CreatePost({ onPostCreated }) {
       const postData = {
         content: content.trim() || null,
         imageUrl: imageUrl,
+        videoUrl: videoUrl,
         hashtags: hashtags.trim(),
       };
       
       // Perform authenticity check and add to postData
       try {
-        if (content.trim()) {
-          // Call the Python backend for fact-checking
-          const predictionResponse = await fetch('http://localhost:8000/predict/text', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ content: content.trim() }),
-          });
-
-          if (predictionResponse.ok) {
-            const predictionData = await predictionResponse.json();
-            postData.prediction = predictionData.prediction;
-            postData.confidence = parseFloat(predictionData.confidence);
-            
-            // Add additional fact-check data if available
-            if (predictionData.explanation) {
-              postData.factCheckDetails = {
-                explanation: predictionData.explanation,
-                facts_found: predictionData.facts_found || [],
-                inaccuracies: predictionData.inaccuracies || [],
-                missing_context: predictionData.missing_context || "",
-                sources: predictionData.sources || []
-              };
-            }
-            
-            console.log('Fact-check result:', predictionData);
-          } else {
-            console.error('Fact-check API error:', predictionResponse.status);
-            // Fallback to unknown prediction
-            postData.prediction = "unknown";
-            postData.confidence = 0.0;
+        if (videoFile) {
+          // Check video authenticity using Python backend
+          console.log('Checking video authenticity...');
+          const videoAnalysis = await checkVideoAuthenticity(videoFile);
+          postData.prediction = videoAnalysis.prediction;
+          postData.confidence = parseFloat(videoAnalysis.confidence);
+          
+          if (videoAnalysis.videoAnalysis) {
+            postData.factCheckDetails = {
+              type: 'video_deepfake_analysis',
+              faces_analyzed: videoAnalysis.videoAnalysis.faces_analyzed,
+              seconds_analyzed: videoAnalysis.videoAnalysis.seconds_analyzed,
+              quantum_enhanced: videoAnalysis.videoAnalysis.quantum_enhanced,
+              error: videoAnalysis.error
+            };
           }
+          
+          console.log('Video analysis result:', videoAnalysis);
         } else {
-          // No text content to check
+          // No content to check
           postData.prediction = "unknown";
           postData.confidence = 0.0;
         }
@@ -146,6 +229,16 @@ export default function CreatePost({ onPostCreated }) {
         postData.prediction = "unknown";
         postData.confidence = 0.0;
       }
+
+      // Final validation
+      const hasValidContent = content.trim() ? content.trim() : null;
+      const hasValidMedia = imageUrl || videoUrl;
+      
+      console.log('Final validation:', { 
+        hasValidContent, 
+        hasValidMedia, 
+        finalPostData: postData 
+      });
 
       console.log('Sending post data:', postData);
 
@@ -165,9 +258,14 @@ export default function CreatePost({ onPostCreated }) {
         setContent('');
         setHashtags('');
         setImageFile(null);
+        setVideoFile(null);
         setImagePreview('');
+        setVideoPreview('');
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
+        }
+        if (videoInputRef.current) {
+          videoInputRef.current.value = '';
         }
         onPostCreated?.(newPost);
       } else {
@@ -277,6 +375,29 @@ export default function CreatePost({ onPostCreated }) {
                     </button>
                   </div>
                 )}
+
+                {/* Video Preview */}
+                {videoPreview && (
+                  <div className="mb-3 relative rounded-2xl overflow-hidden border border-gray-700">
+                    <video
+                      src={videoPreview}
+                      controls
+                      className="w-full max-h-80 object-cover"
+                      preload="metadata"
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                    <button
+                      type="button"
+                      onClick={removeVideo}
+                      className="absolute top-2 right-2 bg-black/70 text-white rounded-full p-1.5 hover:bg-black/90 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
               </>
             )}
 
@@ -324,6 +445,19 @@ export default function CreatePost({ onPostCreated }) {
                   </div>
                 )}
 
+                {videoPreview && (
+                  <div className="mb-3 relative rounded-2xl overflow-hidden border border-gray-700">
+                    <video
+                      src={videoPreview}
+                      controls
+                      className="w-full max-h-80 object-cover"
+                      preload="metadata"
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  </div>
+                )}
+
                 {hashtags && (
                   <div className="mb-3">
                     <p className="text-blue-400">{hashtags}</p>
@@ -335,7 +469,7 @@ export default function CreatePost({ onPostCreated }) {
 
             {/* Bottom Bar */}
             <div className="flex items-center justify-between">
-              {/* Tweet Options */}
+              {/* Media Upload Options */}
               {step === 1 && (
                 <div className="flex items-center space-x-0">
                   {/* Image Upload */}
@@ -343,10 +477,24 @@ export default function CreatePost({ onPostCreated }) {
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-full transition-colors"
-                    title="Add photos or video"
+                    title="Add photos"
+                    disabled={!!videoFile}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </button>
+
+                  {/* Video Upload */}
+                  <button
+                    type="button"
+                    onClick={() => videoInputRef.current?.click()}
+                    className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-full transition-colors"
+                    title="Add video"
+                    disabled={!!imageFile}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     </svg>
                   </button>
                 </div>
@@ -394,7 +542,7 @@ export default function CreatePost({ onPostCreated }) {
                   <button
                     type="button"
                     onClick={handleNext}
-                    disabled={(step === 1 && (!content.trim() && !imageFile)) || loading || (step === 1 && remainingChars < 0)}
+                    disabled={(step === 1 && (!content.trim() && !imageFile && !videoFile)) || loading || (step === 1 && remainingChars < 0)}
                     className="bg-blue-500 text-white px-4 py-1.5 rounded-full font-bold text-sm hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[60px]"
                   >
                     Next
@@ -415,12 +563,19 @@ export default function CreatePost({ onPostCreated }) {
               </div>
             </div>
 
-            {/* Hidden file input */}
+            {/* Hidden file inputs */}
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
               onChange={handleImageUpload}
+              className="hidden"
+            />
+            <input
+              ref={videoInputRef}
+              type="file"
+              accept="video/*"
+              onChange={handleVideoUpload}
               className="hidden"
             />
           </div>
