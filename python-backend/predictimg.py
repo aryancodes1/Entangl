@@ -3,7 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import tensorflow as tf
+import requests  # Add this import
+import logging
 print(f"TensorFlow version: {tf.__version__}")
+
+# Configure logging for this module
+logger = logging.getLogger(__name__)
 
 try:
     import cirq
@@ -168,20 +173,29 @@ def predict_video_consistent(
     Predict deepfake probability for a video using FaceNet embeddings + TFQ layered encoding.
     Matches training encoding exactly.
     """
+    logger.info(f"Starting video analysis for: {video_path}")
+    logger.info(f"Parameters - max_faces: {max_faces_per_video}, seconds_range: {seconds_range}, device: {device}")
+    
     if not TFQ_AVAILABLE:
-        print("TensorFlow Quantum not available. Cannot perform quantum prediction.")
+        logger.error("TensorFlow Quantum not available")
         raise Exception("tfq_unavailable")
     
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
+        logger.error(f"Could not open video file: {video_path}")
         raise Exception("Could not open video file")
         
     fps = int(cap.get(cv2.CAP_PROP_FPS))
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    duration = frame_count / fps if fps > 0 else 0
+    
+    logger.info(f"Video info - FPS: {fps}, frames: {frame_count}, duration: {duration:.2f}s")
 
     start_frame = max(0, frame_count - int(seconds_range * fps))
     end_frame = frame_count
     step = max(1, int((end_frame - start_frame) / (max_faces_per_video * 2)))
+    
+    logger.info(f"Analysis range - frames {start_frame} to {end_frame}, step: {step}")
 
     face_embeddings = []
     faces_collected = 0
@@ -197,6 +211,9 @@ def predict_video_consistent(
                 continue
 
             faces = detect_faces_upper_half(frame)
+            if len(faces) > 0:
+                logger.debug(f"Found {len(faces)} face(s) in frame {frame_no}")
+                
             for (x, y, w, h) in faces:
                 face_crop = frame[y:y+h, x:x+w]
                 if face_crop.size == 0:
@@ -205,40 +222,42 @@ def predict_video_consistent(
                 # --- Face augmentation ---
                 face_aug = augment_face(face_crop)
 
-                # --- Skip visualization for API ---
-                # plt.figure(figsize=(2, 2))
-                # plt.imshow(cv2.cvtColor(face_aug, cv2.COLOR_BGR2RGB))
-                # plt.axis("off")
-                # plt.title(f"Face {faces_collected + 1} (aug)")
-                # plt.show()
-
                 # --- FaceNet embedding ---
                 face_t = facenet_transform(face_aug).unsqueeze(0).to(device)
                 feat = embedder_model(face_t)
                 feat = feat.view(-1).cpu().numpy()  # shape (512,)
                 face_embeddings.append(feat)
                 faces_collected += 1
+                
+                logger.debug(f"Processed face {faces_collected}/{max_faces_per_video}")
 
                 if faces_collected >= max_faces_per_video:
                     break
 
     cap.release()
+    logger.info(f"Face extraction completed - collected {faces_collected} faces")
 
     if not face_embeddings:
+        logger.warning("No faces detected in video")
         raise Exception("no_face_detected")
 
+    logger.info("Scaling features and preparing quantum circuits...")
     X_scaled = scaler.transform(face_embeddings)
 
     circuits, _ = batch_features_to_circuits_layers(X_scaled, n_qubits)
     tfq_tensor = tfq.convert_to_tensor(circuits)
 
+    logger.info("Running quantum model prediction...")
     probs = model.predict(tfq_tensor, verbose=0).flatten()
-    print("Probabilities per face:", probs)
+    logger.info(f"Probabilities per face: {probs}")
     avg_prob = float(np.mean(probs))
 
     # --- Majority voting ---
     num_fake = np.sum(probs > 0.5)
     label = "fake" if avg_prob > 0.5 else "real"
+    
+    logger.info(f"Final result - average probability: {avg_prob:.4f}, label: {label}")
+    logger.info(f"Faces classified as fake: {num_fake}/{len(probs)}")
 
     return avg_prob, label
 
@@ -366,26 +385,38 @@ def predict_image_deepfake_single(
     """
     Predict deepfake probability for a single image using FaceNet embeddings + TFQ layered encoding.
     """
+    logger.info(f"Starting image analysis for: {image_path}")
+    logger.info(f"Parameters - max_faces: {max_faces}, device: {device}")
+    
     if not TFQ_AVAILABLE:
-        print("TensorFlow Quantum not available. Cannot perform quantum prediction.")
+        logger.error("TensorFlow Quantum not available")
         raise Exception("tfq_unavailable")
     
     # Load image
     image = cv2.imread(image_path)
     if image is None:
+        logger.error(f"Could not load image file: {image_path}")
         raise Exception("Could not load image file")
     
+    logger.info(f"Image loaded - shape: {image.shape}")
+    
     # Detect faces
+    logger.info("Detecting faces in image...")
     faces = detect_faces_in_image(image)
     
     if not faces:
+        logger.warning("No faces detected in image")
         raise Exception("no_face_detected")
+    
+    logger.info(f"Found {len(faces)} face(s) in image")
     
     face_embeddings = []
     faces_processed = 0
     
     with torch.no_grad():
-        for (x, y, w, h) in faces[:max_faces]:  # Limit to max_faces
+        for i, (x, y, w, h) in enumerate(faces[:max_faces]):  # Limit to max_faces
+            logger.debug(f"Processing face {i+1}/{min(len(faces), max_faces)} - size: {w}x{h}")
+            
             face_crop = image[y:y+h, x:x+w]
             if face_crop.size == 0:
                 continue
@@ -400,10 +431,14 @@ def predict_image_deepfake_single(
             face_embeddings.append(feat)
             faces_processed += 1
     
+    logger.info(f"Face processing completed - processed {faces_processed} faces")
+    
     if not face_embeddings:
+        logger.warning("No valid faces processed")
         raise Exception("no_face_detected")
     
     # Scale features
+    logger.info("Scaling features and preparing quantum circuits...")
     X_scaled = scaler.transform(face_embeddings)
     
     # Convert to quantum circuits
@@ -411,11 +446,14 @@ def predict_image_deepfake_single(
     tfq_tensor = tfq.convert_to_tensor(circuits)
     
     # Predict
+    logger.info("Running quantum model prediction...")
     probs = model.predict(tfq_tensor, verbose=0).flatten()
-    print("Probabilities per face:", probs)
+    logger.info(f"Probabilities per face: {probs}")
     avg_prob = float(np.mean(probs))
     
     # Determine label
     label = "fake" if avg_prob > 0.5 else "real"
+    
+    logger.info(f"Final result - average probability: {avg_prob:.4f}, label: {label}")
     
     return avg_prob, label, faces_processed

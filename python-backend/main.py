@@ -4,16 +4,30 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Dict, Any, List
 import json
+import requests
+import tempfile
+import shutil
+from pathlib import Path
+import logging
+import time
 
 from contextlib import asynccontextmanager
 import asyncio
 from dotenv import load_dotenv
 import os
-import tempfile
-import shutil
-from pathlib import Path
 import joblib
 import torch
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler('deepfake_api.log')
+    ]
+)
+logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -261,6 +275,15 @@ async def predict_batch(files: List[UploadFile] = File(...)):
 class TextPredictionRequest(BaseModel):
     content: str
 
+class VideoPredictionRequest(BaseModel):
+    url: str
+    max_faces: int = 20
+    seconds_range: int = 6
+
+class ImagePredictionRequest(BaseModel):
+    url: str
+    max_faces: int = 5
+
 @app.post("/predict/text")
 async def predict_text_authenticity(request: TextPredictionRequest) -> Dict[str, Any]:
     """
@@ -477,6 +500,317 @@ async def predict_image_batch(files: List[UploadFile] = File(...)):
         "total_files": len(files),
         "successful_predictions": len([r for r in results if r.get("status") == "success"])
     }
+
+def download_file_from_url(url, temp_dir):
+    """Download file from URL to temporary directory with detailed logging"""
+    try:
+        logger.info(f"Starting download from URL: {url}")
+        start_time = time.time()
+        
+        # Make request with stream=True for large files
+        logger.info("Making HTTP request...")
+        response = requests.get(url, stream=True, timeout=30)
+        response.raise_for_status()
+        
+        # Log response details
+        content_length = response.headers.get('content-length')
+        content_type = response.headers.get('content-type', '')
+        logger.info(f"Response received - Content-Type: {content_type}, Content-Length: {content_length}")
+        
+        # Determine file extension
+        if 'video' in content_type:
+            extension = '.mp4'
+        elif 'image' in content_type:
+            extension = '.jpg'
+        else:
+            # Try to get extension from URL
+            from urllib.parse import urlparse
+            parsed = urlparse(url)
+            extension = Path(parsed.path).suffix or '.tmp'
+        
+        temp_file_path = os.path.join(temp_dir, f"downloaded_file{extension}")
+        logger.info(f"Downloading to temporary file: {temp_file_path}")
+        
+        # Download with progress tracking
+        downloaded_bytes = 0
+        with open(temp_file_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+                    downloaded_bytes += len(chunk)
+                    
+                    # Log progress every 1MB
+                    if downloaded_bytes % (1024 * 1024) == 0:
+                        logger.info(f"Downloaded {downloaded_bytes / (1024 * 1024):.1f} MB...")
+        
+        download_time = time.time() - start_time
+        file_size_mb = downloaded_bytes / (1024 * 1024)
+        logger.info(f"Download completed successfully!")
+        logger.info(f"File size: {file_size_mb:.2f} MB")
+        logger.info(f"Download time: {download_time:.2f} seconds")
+        logger.info(f"Download speed: {file_size_mb / download_time:.2f} MB/s")
+        
+        return temp_file_path
+        
+    except requests.exceptions.Timeout:
+        logger.error(f"Download timeout after 30 seconds for URL: {url}")
+        raise Exception("Download timeout - file too large or connection too slow")
+    except requests.exceptions.HTTPError as e:
+        logger.error(f"HTTP error downloading from {url}: {e}")
+        raise Exception(f"HTTP error: {e}")
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Request error downloading from {url}: {e}")
+        raise Exception(f"Network error: {e}")
+    except Exception as e:
+        logger.error(f"Unexpected error downloading from {url}: {e}")
+        raise Exception(f"Failed to download file from URL: {str(e)}")
+
+@app.post("/predict-url")
+async def predict_deepfake_from_url(
+    request: VideoPredictionRequest
+) -> Dict[str, Any]:
+    """
+    Analyze video from URL for deepfake detection
+    
+    Args:
+        request: VideoPredictionRequest with URL and parameters
+    
+    Returns:
+        JSON response with prediction results
+    """
+    logger.info(f"Video prediction request received for URL: {request.url}")
+    logger.info(f"Parameters - max_faces: {request.max_faces}, seconds_range: {request.seconds_range}")
+    
+    # Check if models are loaded
+    if not all([scaler, embedder_model]):
+        logger.error("Models not loaded - scaler or embedder_model missing")
+        raise HTTPException(
+            status_code=503,
+            detail="Models not loaded. Please try again later."
+        )
+    
+    if not TFQ_AVAILABLE or tfq_model is None:
+        logger.error("TensorFlow Quantum not available or model not loaded")
+        raise HTTPException(
+            status_code=503,
+            detail="TensorFlow Quantum not available. Quantum prediction disabled."
+        )
+    
+    # Create temporary directory
+    temp_dir = tempfile.mkdtemp()
+    temp_file_path = None
+    logger.info(f"Created temporary directory: {temp_dir}")
+    
+    try:
+        # Download file from URL
+        logger.info("Starting file download...")
+        temp_file_path = download_file_from_url(request.url, temp_dir)
+        logger.info(f"File downloaded successfully to: {temp_file_path}")
+        
+        # Run prediction
+        logger.info("Starting video analysis...")
+        analysis_start_time = time.time()
+        
+        prob, label = predict_video_consistent(
+            video_path=temp_file_path,
+            model=tfq_model,
+            scaler=scaler,
+            embedder_model=embedder_model,
+            n_qubits=8,
+            max_faces_per_video=request.max_faces,
+            seconds_range=request.seconds_range,
+            device=device
+        )
+        
+        analysis_time = time.time() - analysis_start_time
+        logger.info(f"Video analysis completed in {analysis_time:.2f} seconds")
+        logger.info(f"Analysis result - probability: {prob:.4f}, label: {label}")
+        
+        # Prepare response
+        response = {
+            "url": request.url,
+            "prediction": {
+                "label": label,
+                "is_deepfake": label == "fake",
+                "deepfake_probability": round(prob, 4) if label == "real" else round(1 - prob, 4)
+            },
+            "analysis_parameters": {
+                "max_faces_analyzed": request.max_faces,
+                "seconds_analyzed": request.seconds_range,
+                "quantum_enhanced": True,
+                "device_used": device
+            },
+            "status": "success"
+        }
+        
+        logger.info("Video prediction completed successfully")
+        return JSONResponse(content=response)
+        
+    except Exception as e:
+        logger.error(f"Error during video prediction: {e}")
+        
+        # Handle specific error cases
+        if str(e) == "no_face_detected":
+            logger.warning("No faces detected in the video")
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "error": "No faces detected in the video",
+                    "url": request.url,
+                    "status": "error"
+                }
+            )
+        elif str(e) == "tfq_unavailable":
+            logger.error("TensorFlow Quantum unavailable")
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "error": "TensorFlow Quantum unavailable",
+                    "url": request.url,
+                    "status": "error"
+                }
+            )
+        else:
+            logger.error(f"Internal server error: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Internal server error during prediction: {str(e)}"
+            )
+    
+    finally:
+        # Cleanup temporary files
+        try:
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
+                logger.info(f"Cleaned up temporary file: {temp_file_path}")
+            if os.path.exists(temp_dir):
+                os.rmdir(temp_dir)
+                logger.info(f"Cleaned up temporary directory: {temp_dir}")
+        except Exception as cleanup_error:
+            logger.warning(f"Failed to cleanup temporary files: {cleanup_error}")
+
+@app.post("/predict/image-url")
+async def predict_image_deepfake_from_url(
+    request: ImagePredictionRequest
+) -> Dict[str, Any]:
+    """
+    Analyze image from URL for deepfake detection
+    
+    Args:
+        request: ImagePredictionRequest with URL and parameters
+    
+    Returns:
+        JSON response with prediction results
+    """
+    logger.info(f"Image prediction request received for URL: {request.url}")
+    logger.info(f"Parameters - max_faces: {request.max_faces}")
+    
+    # Check if models are loaded
+    if not all([scaler, embedder_model]):
+        logger.error("Models not loaded - scaler or embedder_model missing")
+        raise HTTPException(
+            status_code=503,
+            detail="Models not loaded. Please try again later."
+        )
+    
+    if not TFQ_AVAILABLE or tfq_model is None:
+        logger.error("TensorFlow Quantum not available or model not loaded")
+        raise HTTPException(
+            status_code=503,
+            detail="TensorFlow Quantum not available. Quantum prediction disabled."
+        )
+    
+    # Create temporary directory
+    temp_dir = tempfile.mkdtemp()
+    temp_file_path = None
+    logger.info(f"Created temporary directory: {temp_dir}")
+    
+    try:
+        # Download file from URL
+        logger.info("Starting file download...")
+        temp_file_path = download_file_from_url(request.url, temp_dir)
+        logger.info(f"File downloaded successfully to: {temp_file_path}")
+        
+        # Run prediction
+        logger.info("Starting image analysis...")
+        analysis_start_time = time.time()
+        
+        prob, label, faces_found = predict_image_deepfake_single(
+            image_path=temp_file_path,
+            model=tfq_model,
+            scaler=scaler,
+            embedder_model=embedder_model,
+            n_qubits=8,
+            max_faces=request.max_faces,
+            device=device
+        )
+        
+        analysis_time = time.time() - analysis_start_time
+        logger.info(f"Image analysis completed in {analysis_time:.2f} seconds")
+        logger.info(f"Analysis result - probability: {prob:.4f}, label: {label}, faces_found: {faces_found}")
+        
+        # Prepare response
+        response = {
+            "url": request.url,
+            "prediction": {
+                "label": label,
+                "is_deepfake": label == "fake",
+                "deepfake_probability": round(prob, 4) if label == "real" else round(1 - prob, 4)
+            },
+            "analysis_parameters": {
+                "faces_found": faces_found,
+                "max_faces_analyzed": request.max_faces,
+                "quantum_enhanced": True,
+                "device_used": device
+            },
+            "status": "success"
+        }
+        
+        logger.info("Image prediction completed successfully")
+        return JSONResponse(content=response)
+        
+    except Exception as e:
+        logger.error(f"Error during image prediction: {e}")
+        
+        # Handle specific error cases
+        if str(e) == "no_face_detected":
+            logger.warning("No faces detected in the image")
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "error": "No faces detected in the image",
+                    "url": request.url,
+                    "status": "error"
+                }
+            )
+        elif str(e) == "tfq_unavailable":
+            logger.error("TensorFlow Quantum unavailable")
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "error": "TensorFlow Quantum unavailable",
+                    "url": request.url,
+                    "status": "error"
+                }
+            )
+        else:
+            logger.error(f"Internal server error: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Internal server error during prediction: {str(e)}"
+            )
+    
+    finally:
+        # Cleanup temporary files
+        try:
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
+                logger.info(f"Cleaned up temporary file: {temp_file_path}")
+            if os.path.exists(temp_dir):
+                os.rmdir(temp_dir)
+                logger.info(f"Cleaned up temporary directory: {temp_dir}")
+        except Exception as cleanup_error:
+            logger.warning(f"Failed to cleanup temporary files: {cleanup_error}")
 
 if __name__ == "__main__":
     import uvicorn

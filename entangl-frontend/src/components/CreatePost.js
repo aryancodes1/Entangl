@@ -107,16 +107,18 @@ export default function CreatePost({ onPostCreated }) {
     }
   };
 
-  const checkVideoAuthenticity = async (file) => {
+  const checkVideoAuthenticity = async (videoUrl) => {
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('max_faces', '20');
-      formData.append('seconds_range', '6');
-
-      const response = await fetch('http://localhost:8000/predict', {
+      const response = await fetch('http://localhost:8000/predict-url', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: videoUrl,
+          max_faces: 20,
+          seconds_range: 6
+        }),
       });
 
       if (response.ok) {
@@ -133,11 +135,12 @@ export default function CreatePost({ onPostCreated }) {
           }
         };
       } else {
-        console.error('Video authenticity check failed:', response.status);
+        const errorData = await response.json();
+        console.error('Video authenticity check failed:', response.status, errorData);
         return {
           prediction: 'unknown',
           confidence: 0.0,
-          error: 'Analysis failed'
+          error: errorData.detail || 'Analysis failed'
         };
       }
     } catch (error) {
@@ -150,15 +153,17 @@ export default function CreatePost({ onPostCreated }) {
     }
   };
 
-  const checkImageAuthenticity = async (file) => {
+  const checkImageAuthenticity = async (imageUrl) => {
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('max_faces', '5');
-
-      const response = await fetch('http://localhost:8000/predict/image', {
+      const response = await fetch('http://localhost:8000/predict/image-url', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: imageUrl,
+          max_faces: 5
+        }),
       });
 
       if (response.ok) {
@@ -174,11 +179,12 @@ export default function CreatePost({ onPostCreated }) {
           }
         };
       } else {
-        console.error('Image authenticity check failed:', response.status);
+        const errorData = await response.json();
+        console.error('Image authenticity check failed:', response.status, errorData);
         return {
           prediction: 'unknown',
           confidence: 0.0,
-          error: 'Analysis failed'
+          error: errorData.detail || 'Analysis failed'
         };
       }
     } catch (error) {
@@ -263,11 +269,11 @@ export default function CreatePost({ onPostCreated }) {
       
       // Perform authenticity check and add to postData
       try {
-        if (videoFile) {
-          // Check video authenticity using Python backend
-          console.log('Checking video authenticity...');
+        if (videoUrl) {
+          // Check video authenticity using Python backend with S3 URL
+          console.log('Checking video authenticity from S3 URL...');
           setUploadProgress('Analyzing video authenticity...');
-          const videoAnalysis = await checkVideoAuthenticity(videoFile);
+          const videoAnalysis = await checkVideoAuthenticity(videoUrl);
           postData.prediction = videoAnalysis.prediction;
           postData.confidence = parseFloat(videoAnalysis.confidence);
           
@@ -282,11 +288,11 @@ export default function CreatePost({ onPostCreated }) {
           }
           
           console.log('Video analysis result:', videoAnalysis);
-        } else if (imageFile) {
-          // Check image authenticity using Python backend
-          console.log('Checking image authenticity...');
+        } else if (imageUrl) {
+          // Check image authenticity using Python backend with S3 URL
+          console.log('Checking image authenticity from S3 URL...');
           setUploadProgress('Analyzing image authenticity...');
-          const imageAnalysis = await checkImageAuthenticity(imageFile);
+          const imageAnalysis = await checkImageAuthenticity(imageUrl);
           postData.prediction = imageAnalysis.prediction;
           postData.confidence = parseFloat(imageAnalysis.confidence);
           
