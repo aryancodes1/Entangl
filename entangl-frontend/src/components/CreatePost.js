@@ -10,6 +10,7 @@ export default function CreatePost({ onPostCreated }) {
   const [imagePreview, setImagePreview] = useState('');
   const [videoPreview, setVideoPreview] = useState('');
   const [loading, setLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState('');
   const [step, setStep] = useState(1); // 1: Content, 2: Hashtags, 3: Finalize
   const fileInputRef = useRef(null);
   const videoInputRef = useRef(null);
@@ -79,16 +80,31 @@ export default function CreatePost({ onPostCreated }) {
     }
   };
 
-  const uploadImageToCloudinary = async (file) => {
-    // For now, create a local object URL for testing
-    // In production, you would upload to Cloudinary or another service
-    return URL.createObjectURL(file);
-  };
+  const uploadFileToS3 = async (file) => {
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('file', file);
 
-  const uploadVideoToCloudinary = async (file) => {
-    // For now, create a local object URL for testing
-    // In production, you would upload to Cloudinary or another service
-    return URL.createObjectURL(file);
+      const response = await fetch('http://localhost:8080/api/posts/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const result = await response.json();
+      return result.url;
+    } catch (error) {
+      console.error('S3 upload error:', error);
+      throw error;
+    }
   };
 
   const checkVideoAuthenticity = async (file) => {
@@ -198,14 +214,20 @@ export default function CreatePost({ onPostCreated }) {
       let imageUrl = null;
       let videoUrl = null;
       
-      // Upload media if present
+      // Upload media to S3 if present
       if (imageFile) {
-        imageUrl = await uploadImageToCloudinary(imageFile);
+        setUploadProgress('Uploading image...');
+        imageUrl = await uploadFileToS3(imageFile);
+        console.log('Image uploaded to S3:', imageUrl);
       }
       
       if (videoFile) {
-        videoUrl = await uploadVideoToCloudinary(videoFile);
+        setUploadProgress('Uploading video...');
+        videoUrl = await uploadFileToS3(videoFile);
+        console.log('Video uploaded to S3:', videoUrl);
       }
+
+      setUploadProgress('Processing...');
 
       // Check authentication - try to get token first
       let token = localStorage.getItem('token');
@@ -244,6 +266,7 @@ export default function CreatePost({ onPostCreated }) {
         if (videoFile) {
           // Check video authenticity using Python backend
           console.log('Checking video authenticity...');
+          setUploadProgress('Analyzing video authenticity...');
           const videoAnalysis = await checkVideoAuthenticity(videoFile);
           postData.prediction = videoAnalysis.prediction;
           postData.confidence = parseFloat(videoAnalysis.confidence);
@@ -262,6 +285,7 @@ export default function CreatePost({ onPostCreated }) {
         } else if (imageFile) {
           // Check image authenticity using Python backend
           console.log('Checking image authenticity...');
+          setUploadProgress('Analyzing image authenticity...');
           const imageAnalysis = await checkImageAuthenticity(imageFile);
           postData.prediction = imageAnalysis.prediction;
           postData.confidence = parseFloat(imageAnalysis.confidence);
@@ -299,6 +323,8 @@ export default function CreatePost({ onPostCreated }) {
       });
 
       console.log('Sending post data:', postData);
+
+      setUploadProgress('Creating post...');
 
       const response = await fetch('http://localhost:8080/api/posts', {
         method: 'POST',
@@ -353,6 +379,7 @@ export default function CreatePost({ onPostCreated }) {
       alert('Network error creating post. Please check your connection and try again.');
     } finally {
       setLoading(false);
+      setUploadProgress('');
       setStep(1); // Reset to first step
     }
   };
@@ -375,6 +402,17 @@ export default function CreatePost({ onPostCreated }) {
           </h2>
         </div>
       )}
+
+      {/* Upload Progress */}
+      {loading && uploadProgress && (
+        <div className="mb-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-blue-400 text-sm">{uploadProgress}</span>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit}>
         <div className="flex space-x-3">
           {/* User Avatar */}

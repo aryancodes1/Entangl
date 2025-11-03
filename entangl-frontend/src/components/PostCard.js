@@ -287,6 +287,10 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
                   alt="Post media"
                   className="w-full max-h-[500px] object-cover"
                   loading="lazy"
+                  onError={(e) => {
+                    console.error('Failed to load image:', post.imageUrl);
+                    e.target.style.display = 'none';
+                  }}
                 />
               </div>
             )}
@@ -299,6 +303,10 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
                   controls
                   className="w-full max-h-[500px] object-cover"
                   preload="metadata"
+                  onError={(e) => {
+                    console.error('Failed to load video:', post.videoUrl);
+                    e.target.style.display = 'none';
+                  }}
                 >
                   Your browser does not support the video tag.
                 </video>

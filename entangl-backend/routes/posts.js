@@ -3,6 +3,120 @@ const prisma = require('../lib/prisma');
 const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const multer = require('multer');
+const crypto = require('crypto');
+
+// Configure AWS S3 Client (v3)
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION || 'us-east-1',
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+  // Explicitly disable ACL usage
+  forcePathStyle: false,
+  useAccelerateEndpoint: false,
+});
+
+// Configure multer for memory storage
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image and video files are allowed'), false);
+    }
+  }
+});
+
+// Helper function to generate UUID using crypto
+const generateUUID = () => {
+  return crypto.randomUUID();
+};
+
+// Helper function to upload file to S3
+const uploadToS3 = async (file, bucketName) => {
+  const fileExtension = file.originalname.split('.').pop();
+  const fileName = `${generateUUID()}.${fileExtension}`;
+  const fileType = file.mimetype.startsWith('image/') ? 'images' : 'videos';
+  const key = `${fileType}/${fileName}`;
+
+  const uploadParams = {
+    Bucket: bucketName,
+    Key: key,
+    Body: file.buffer,
+    ContentType: file.mimetype,
+    // Explicitly remove any ACL-related parameters
+    // Use bucket-level public access policy instead
+  };
+
+  // Remove any undefined properties that might cause issues
+  Object.keys(uploadParams).forEach(key => {
+    if (uploadParams[key] === undefined) {
+      delete uploadParams[key];
+    }
+  });
+
+  const command = new PutObjectCommand(uploadParams);
+
+  try {
+    const result = await s3Client.send(command);
+    console.log('S3 upload successful:', result);
+    
+    // Construct the URL manually
+    const region = process.env.AWS_REGION || 'us-east-1';
+    const url = `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
+    return url;
+  } catch (error) {
+    console.error('S3 upload error details:', {
+      code: error.Code,
+      message: error.message,
+      statusCode: error.$metadata?.httpStatusCode,
+      requestId: error.$metadata?.requestId
+    });
+    
+    if (error.Code === 'AccessControlListNotSupported') {
+      throw new Error('S3 bucket does not support ACLs. Please ensure your bucket policy allows public read access.');
+    }
+    if (error.Code === 'NoSuchBucket') {
+      throw new Error('S3 bucket does not exist. Please check your bucket name configuration.');
+    }
+    if (error.Code === 'AccessDenied') {
+      throw new Error('Access denied to S3 bucket. Please check your AWS credentials and bucket permissions.');
+    }
+    
+    throw new Error(`S3 upload failed: ${error.message || 'Unknown error'}`);
+  }
+};
+
+// POST upload media endpoint
+router.post('/upload', authenticateToken, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file provided' });
+    }
+
+    const bucketName = process.env.AWS_S3_BUCKET_NAME;
+    if (!bucketName) {
+      return res.status(500).json({ error: 'S3 bucket not configured' });
+    }
+
+    const fileUrl = await uploadToS3(req.file, bucketName);
+    
+    res.json({ 
+      url: fileUrl,
+      type: req.file.mimetype.startsWith('image/') ? 'image' : 'video'
+    });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Middleware to handle optional authentication
 const optionalAuth = async (req, res, next) => {
@@ -228,6 +342,22 @@ router.post('/', authenticateToken, async (req, res) => {
     return res.status(400).json({ 
       error: 'Content too long',
       details: 'Posts must be 280 characters or less'
+    });
+  }
+
+  // Validate URLs are from our S3 bucket if provided
+  const bucketName = process.env.AWS_S3_BUCKET_NAME;
+  if (imageUrl && bucketName && !imageUrl.includes(bucketName)) {
+    return res.status(400).json({ 
+      error: 'Invalid image URL',
+      details: 'Image must be uploaded through our service'
+    });
+  }
+  
+  if (videoUrl && bucketName && !videoUrl.includes(bucketName)) {
+    return res.status(400).json({ 
+      error: 'Invalid video URL',
+      details: 'Video must be uploaded through our service'
     });
   }
 
