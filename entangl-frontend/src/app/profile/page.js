@@ -40,7 +40,7 @@ export default function Profile() {
       // Always fetch fresh data from API if we have token and user ID
       if (token && storedUser.id) {
         try {
-          const response = await fetch(`http://localhost:8080/api/users/${storedUser.id}`, {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/users/${storedUser.id}`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -141,7 +141,7 @@ export default function Profile() {
       }
 
       // Fetch user profile with counts
-      const response = await fetch(`http://localhost:8080/api/users/${user.id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/users/${user.id}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -177,7 +177,7 @@ export default function Profile() {
       
       if (!user.id) return;
 
-      const response = await fetch(`http://localhost:8080/api/posts?userId=${user.id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/posts?userId=${user.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -207,7 +207,7 @@ export default function Profile() {
       const token = localStorage.getItem('token');
       const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-      const response = await fetch(`http://localhost:8080/api/users/${user.id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/users/${user.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

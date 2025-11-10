@@ -45,8 +45,8 @@ export default function Search() {
 
       // Search users and posts simultaneously
       const [usersResponse, postsResponse] = await Promise.all([
-        fetch(`http://localhost:8080/api/users/search?q=${encodeURIComponent(searchTerm)}`, { headers }),
-        fetch(`http://localhost:8080/api/posts/search?q=${encodeURIComponent(searchTerm)}`, { headers })
+        fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/users/search?q=${encodeURIComponent(searchTerm)}`, { headers }),
+        fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/posts/search?q=${encodeURIComponent(searchTerm)}`, { headers })
       ]);
 
       if (usersResponse.ok) {
@@ -72,8 +72,8 @@ export default function Search() {
       const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
       const [usersResponse, postsResponse] = await Promise.all([
-        fetch('http://localhost:8080/api/users?limit=10', { headers }),
-        fetch('http://localhost:8080/api/posts?limit=20', { headers })
+        fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/users?limit=10`, { headers }),
+        fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/posts?limit=20`, { headers })
       ]);
 
       if (usersResponse.ok) {
@@ -110,7 +110,7 @@ export default function Search() {
         const token = localStorage.getItem('token');
         const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
         
-        const response = await fetch(`http://localhost:8080/api/users/search?q=${encodeURIComponent(value)}&limit=5`, { headers });
+        const response = await fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/users/search?q=${encodeURIComponent(value)}&limit=5`, { headers });
         if (response.ok) {
           const data = await response.json();
           setSuggestions(data.filter(user => user.id !== currentUserId));
@@ -127,7 +127,7 @@ export default function Search() {
   const handleFollow = async (userId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/follows', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/follows`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

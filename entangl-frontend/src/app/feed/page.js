@@ -53,8 +53,8 @@ export default function Feed() {
       }
 
       const endpoint = activeTab === 'following' 
-        ? `http://localhost:8080/api/posts/feed?page=${pageNum}&limit=10`
-        : `http://localhost:8080/api/posts?page=${pageNum}&limit=10`;
+        ? `${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/posts/feed?page=${pageNum}&limit=10`
+        : `${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/posts?page=${pageNum}&limit=10`;
 
       const response = await fetch(endpoint, {
         headers,

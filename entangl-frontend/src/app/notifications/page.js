@@ -23,7 +23,7 @@ export default function Notifications() {
   const fetchFollowRequests = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/follows/requests', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/follows/requests`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -41,7 +41,7 @@ export default function Notifications() {
   const handleAcceptRequest = async (requestId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/follows/requests/${requestId}/accept`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/follows/requests/${requestId}/accept`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -71,7 +71,7 @@ export default function Notifications() {
   const handleDeclineRequest = async (requestId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/follows/requests/${requestId}/decline`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/follows/requests/${requestId}/decline`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });

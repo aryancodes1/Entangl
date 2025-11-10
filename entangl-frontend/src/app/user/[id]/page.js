@@ -36,7 +36,7 @@ export default function UserProfile({ params }) {
       const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
       // Fetch user profile data
-      const userResponse = await fetch(`http://localhost:8080/api/users/${userId}`, { headers });
+      const userResponse = await fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/users/${userId}`, { headers });
       
       if (!userResponse.ok) {
         throw new Error('User not found');
@@ -48,7 +48,7 @@ export default function UserProfile({ params }) {
       // Check follow status if not own profile
       if (currentUserId && currentUserId !== userId && token) {
         try {
-          const followResponse = await fetch(`http://localhost:8080/api/follows/status/${userId}`, { headers });
+          const followResponse = await fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/follows/status/${userId}`, { headers });
           if (followResponse.ok) {
             const followData = await followResponse.json();
             setFollowStatus(followData.status || 'none');
@@ -83,7 +83,7 @@ export default function UserProfile({ params }) {
         return;
       }
 
-      const response = await fetch(`http://localhost:8080/api/follows/status/${userId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/follows/status/${userId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -118,7 +118,7 @@ export default function UserProfile({ params }) {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/posts?userId=${userId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/posts?userId=${userId}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
 
@@ -155,7 +155,7 @@ export default function UserProfile({ params }) {
         return;
       }
 
-      const response = await fetch('http://localhost:8080/api/follows/request', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/follows/request`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

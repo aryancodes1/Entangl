@@ -55,7 +55,7 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
     if (window.confirm('Are you sure you want to delete this comment?')) {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:8080/api/comments/${commentId}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/comments/${commentId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -77,7 +77,7 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
   const handleLike = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/posts/${post.id}/like`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/posts/${post.id}/like`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -100,7 +100,7 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
     
     setLoadingComments(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/comments/post/${post.id}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/comments/post/${post.id}`);
       if (response.ok) {
         const data = await response.json();
         setComments(data);
@@ -118,7 +118,7 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/comments', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/comments`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -153,7 +153,7 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
     if (window.confirm('Delete this post?')) {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:8080/api/posts/${post.id}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/posts/${post.id}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,

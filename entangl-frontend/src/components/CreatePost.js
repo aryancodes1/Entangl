@@ -86,7 +86,7 @@ export default function CreatePost({ onPostCreated }) {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('http://localhost:8080/api/posts/upload', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/posts/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -109,7 +109,7 @@ export default function CreatePost({ onPostCreated }) {
 
   const checkVideoAuthenticity = async (videoUrl) => {
     try {
-      const response = await fetch('http://localhost:8000/predict-url', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_PYTHON_BACKEND_URL}/predict-url`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -155,7 +155,7 @@ export default function CreatePost({ onPostCreated }) {
 
   const checkImageAuthenticity = async (imageUrl) => {
     try {
-      const response = await fetch('http://localhost:8000/predict/image-url', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_PYTHON_BACKEND_URL}/predict/image-url`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -332,7 +332,7 @@ export default function CreatePost({ onPostCreated }) {
 
       setUploadProgress('Creating post...');
 
-      const response = await fetch('http://localhost:8080/api/posts', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/posts`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

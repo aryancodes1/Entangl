@@ -57,7 +57,7 @@ export default function Navigation() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch('http://localhost:8080/api/follows/requests', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_NODE_BACKEND_URL}/api/follows/requests`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 

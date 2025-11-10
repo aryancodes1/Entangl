@@ -1,5 +1,5 @@
-tensorflow-macos==2.8.0
-tensorflow-quantum==0.7.2
+tensorflow
+tensorflow-quantum
 opencv-python==4.12.0.88
 numpy==1.23.5
 matplotlib==3.7.5
@@ -11,4 +11,3 @@ sympy==1.8
 cirq-core==0.13.1
 fastapi
 uvicorn
-python
