@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Navigation from '../../components/Navigation';
 import PostCard from '../../components/PostCard';
 import Link from 'next/link';
 
-export default function Search() {
+function SearchContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -403,6 +403,30 @@ export default function Search() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SearchLoading() {
+  return (
+    <div className="lg:ml-64">
+      <div className="max-w-2xl mx-auto border-x border-gray-200 dark:border-gray-800 min-h-screen">
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Search() {
+  return (
+    <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white">
+      <Navigation />
+      
+      <Suspense fallback={<SearchLoading />}>
+        <SearchContent />
+      </Suspense>
     </div>
   );
 }
