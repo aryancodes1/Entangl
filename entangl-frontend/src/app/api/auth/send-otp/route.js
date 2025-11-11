@@ -10,7 +10,7 @@ if (!global.otpStore) {
 // Email configuration for OTP delivery
 const emailConfig = {
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: process.env.SMTP_PORT || 587,
+  port: parseInt(process.env.SMTP_PORT) || 587,
   secure: false, // Use TLS
   auth: {
     user: process.env.SMTP_USER, // Your Gmail address
@@ -45,6 +45,8 @@ export async function POST(request) {
     const normalizedEmail = email.toLowerCase().trim();
 
     console.log(`Processing OTP request for: ${normalizedEmail}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`SMTP configured: ${!!transporter}`);
 
     // Check if OTP was recently sent (rate limiting)
     const existingOtp = otpStore.get(normalizedEmail);
@@ -64,8 +66,6 @@ export async function POST(request) {
       sentAt: Date.now(),
       attempts: 0
     });
-
-    console.log(`🔐 Generated OTP for ${normalizedEmail}: ${otp}`);
 
     // Send email with OTP
     if (transporter) {
@@ -139,7 +139,7 @@ export async function POST(request) {
     console.error('Send OTP error:', error);
     return NextResponse.json({ 
       error: 'Internal server error',
-      details: error.message 
+      details: process.env.NODE_ENV === 'development' ? error.message : 'Contact support'
     }, { status: 500 });
   }
 }

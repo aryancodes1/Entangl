@@ -162,3 +162,61 @@
 2025-11-10 19:43:55,341 - main - INFO - Image prediction completed successfully
 2025-11-10 19:43:55,341 - main - INFO - Cleaned up temporary file: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp7e4w2ale/downloaded_file.jpg
 2025-11-10 19:43:55,342 - main - INFO - Cleaned up temporary directory: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp7e4w2ale
+2025-11-10 21:37:52,167 - main - INFO - Image prediction request received for URL: https://entangl-bucket.s3.eu-north-1.amazonaws.com/images/e31fedcc-481e-4b59-ba63-24485e89bc30.jpg
+2025-11-10 21:37:52,169 - main - INFO - Parameters - max_faces: 5
+2025-11-10 21:37:52,170 - main - INFO - Created temporary directory: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp7od0lws3
+2025-11-10 21:37:52,171 - main - INFO - Starting file download...
+2025-11-10 21:37:52,171 - main - INFO - Starting download from URL: https://entangl-bucket.s3.eu-north-1.amazonaws.com/images/e31fedcc-481e-4b59-ba63-24485e89bc30.jpg
+2025-11-10 21:37:52,171 - main - INFO - Making HTTP request...
+2025-11-10 21:37:53,736 - main - INFO - Response received - Content-Type: image/jpeg, Content-Length: 76336
+2025-11-10 21:37:53,737 - main - INFO - Downloading to temporary file: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp7od0lws3/downloaded_file.jpg
+2025-11-10 21:37:54,055 - main - INFO - Download completed successfully!
+2025-11-10 21:37:54,055 - main - INFO - File size: 0.07 MB
+2025-11-10 21:37:54,055 - main - INFO - Download time: 1.88 seconds
+2025-11-10 21:37:54,056 - main - INFO - Download speed: 0.04 MB/s
+2025-11-10 21:37:54,057 - main - INFO - File downloaded successfully to: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp7od0lws3/downloaded_file.jpg
+2025-11-10 21:37:54,057 - main - INFO - Starting image analysis...
+2025-11-10 21:37:54,057 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp7od0lws3/downloaded_file.jpg
+2025-11-10 21:37:54,057 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-11-10 21:37:54,073 - predictimg - INFO - Image loaded - shape: (630, 630, 3)
+2025-11-10 21:37:54,074 - predictimg - INFO - Detecting faces in image...
+2025-11-10 21:37:54,241 - predictimg - INFO - Found 1 face(s) in image
+2025-11-10 21:37:54,542 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-11-10 21:37:54,542 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-11-10 21:37:54,642 - predictimg - INFO - Running quantum model prediction...
+2025-11-10 21:37:54,820 - predictimg - INFO - Probabilities per face: [0.32251132]
+2025-11-10 21:37:54,821 - predictimg - INFO - Final result - average probability: 0.3225, label: real
+2025-11-10 21:37:54,821 - main - INFO - Image analysis completed in 0.76 seconds
+2025-11-10 21:37:54,821 - main - INFO - Analysis result - probability: 0.3225, label: real, faces_found: 1
+2025-11-10 21:37:54,821 - main - INFO - Image prediction completed successfully
+2025-11-10 21:37:54,821 - main - INFO - Cleaned up temporary file: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp7od0lws3/downloaded_file.jpg
+2025-11-10 21:37:54,821 - main - INFO - Cleaned up temporary directory: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp7od0lws3
+2025-11-11 22:46:19,314 - main - INFO - Image prediction request received for URL: https://entangl-bucket.s3.eu-north-1.amazonaws.com/images/4666f62a-cfe5-492e-b2bb-977d10f55b3f.jpg
+2025-11-11 22:46:19,315 - main - INFO - Parameters - max_faces: 5
+2025-11-11 22:46:19,316 - main - INFO - Created temporary directory: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpvcq7r39v
+2025-11-11 22:46:19,316 - main - INFO - Starting file download...
+2025-11-11 22:46:19,316 - main - INFO - Starting download from URL: https://entangl-bucket.s3.eu-north-1.amazonaws.com/images/4666f62a-cfe5-492e-b2bb-977d10f55b3f.jpg
+2025-11-11 22:46:19,316 - main - INFO - Making HTTP request...
+2025-11-11 22:46:20,957 - main - INFO - Response received - Content-Type: image/jpeg, Content-Length: 76336
+2025-11-11 22:46:20,958 - main - INFO - Downloading to temporary file: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpvcq7r39v/downloaded_file.jpg
+2025-11-11 22:46:21,464 - main - INFO - Download completed successfully!
+2025-11-11 22:46:21,465 - main - INFO - File size: 0.07 MB
+2025-11-11 22:46:21,465 - main - INFO - Download time: 2.15 seconds
+2025-11-11 22:46:21,466 - main - INFO - Download speed: 0.03 MB/s
+2025-11-11 22:46:21,467 - main - INFO - File downloaded successfully to: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpvcq7r39v/downloaded_file.jpg
+2025-11-11 22:46:21,467 - main - INFO - Starting image analysis...
+2025-11-11 22:46:21,468 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpvcq7r39v/downloaded_file.jpg
+2025-11-11 22:46:21,468 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-11-11 22:46:21,489 - predictimg - INFO - Image loaded - shape: (630, 630, 3)
+2025-11-11 22:46:21,490 - predictimg - INFO - Detecting faces in image...
+2025-11-11 22:46:21,811 - predictimg - INFO - Found 1 face(s) in image
+2025-11-11 22:46:22,113 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-11-11 22:46:22,113 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-11-11 22:46:22,218 - predictimg - INFO - Running quantum model prediction...
+2025-11-11 22:46:22,428 - predictimg - INFO - Probabilities per face: [0.82851475]
+2025-11-11 22:46:22,429 - predictimg - INFO - Final result - average probability: 0.8285, label: fake
+2025-11-11 22:46:22,429 - main - INFO - Image analysis completed in 0.96 seconds
+2025-11-11 22:46:22,429 - main - INFO - Analysis result - probability: 0.8285, label: fake, faces_found: 1
+2025-11-11 22:46:22,429 - main - INFO - Image prediction completed successfully
+2025-11-11 22:46:22,429 - main - INFO - Cleaned up temporary file: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpvcq7r39v/downloaded_file.jpg
+2025-11-11 22:46:22,429 - main - INFO - Cleaned up temporary directory: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpvcq7r39v
