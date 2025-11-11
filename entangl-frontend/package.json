@@ -8,7 +8,6 @@
     "start": "next start"
   },
   "dependencies": {
-    "@next/swc-darwin-arm64": "^15.5.5",
     "@uploadthing/react": "^7.3.3",
     "next": "15.5.2",
     "next-auth": "^4.24.11",
