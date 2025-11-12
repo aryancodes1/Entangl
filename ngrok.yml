@@ -1,0 +1,13 @@
+version: "2"
+authtoken: 2ud4Wa6mUqIqTDsDWSwAJLOFPjr_2FxaTYs3qmHqhjWveY67r
+
+tunnels:
+  node-backend:
+    addr: 3000
+    proto: http
+    inspect: true
+    
+  python-backend:
+    addr: 8000
+    proto: http
+    inspect: true
