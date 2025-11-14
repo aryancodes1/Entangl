@@ -5,18 +5,17 @@ from .verify import verify_claim_with_llm
 
 def check_fact(claim: str):
     evidence = collect_evidence(claim)
-    result_json = verify_claim_with_llm(claim, evidence)
+    result = verify_claim_with_llm(claim, evidence)
 
-    try:
-        result = json.loads(result_json)
-        result["claim"] = claim
-        result["sources"] = evidence
-        return result
-    except:
-        return {
-            "claim": claim,
+    # Ensure dict
+    if not isinstance(result, dict):
+        result = {
             "verdict": "uncertain",
             "confidence": 0,
             "explanation": "Invalid JSON from LLM",
-            "sources": evidence
+            "used_evidence_indices": []
         }
+
+    result["claim"] = claim
+    result["sources"] = evidence
+    return result

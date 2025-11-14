@@ -2,19 +2,12 @@ FACT_CHECK_PROMPT = """
 You are a strict fact-checking AI.
 
 Task:
-Given a CLAIM and a set of EVIDENCE SNIPPETS (from Wikipedia + Google News),
-decide if the claim is TRUE, FALSE, or UNCERTAIN.
+Given a CLAIM and EVIDENCE SNIPPETS, determine whether the claim is TRUE, FALSE, or UNCERTAIN.
 
-Rules:
-- TRUE only if evidence strongly supports.
-- FALSE only if evidence contradicts.
-- UNCERTAIN if evidence is missing, vague, or unrelated.
+Definitions:
+- TRUE = Evidence strongly supports the claim.
+- FALSE = Evidence contradicts the claim.
+- UNCERTAIN = Evidence is insufficient, vague, or off-topic.
 
-Return JSON in this format:
-{
-  "verdict": "true/false/uncertain",
-  "confidence": number from 0 to 1,
-  "explanation": "short explanation",
-  "used_evidence_indices": [list of indices]
-}
+Your output MUST be a JSON object only.
 """

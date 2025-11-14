@@ -4,7 +4,7 @@ from .settings import MAX_EVIDENCE_SNIPPETS
 
 
 # ------------------------------------------------
-#  Wikipedia Evidence
+# Wikipedia Evidence
 # ------------------------------------------------
 def get_wikipedia_evidence(query):
     url = "https://en.wikipedia.org/w/api.php"
@@ -13,7 +13,7 @@ def get_wikipedia_evidence(query):
         "list": "search",
         "format": "json",
         "srsearch": query,
-        "srlimit": 2,       # max 2 wiki entries
+        "srlimit": 2,
     }
 
     try:
@@ -24,7 +24,11 @@ def get_wikipedia_evidence(query):
         evidence = []
 
         for r in results:
-            snippet = r.get("snippet", "").replace("<span class=\"searchmatch\">", "").replace("</span>", "")
+            snippet = (
+                r.get("snippet", "")
+                .replace('<span class="searchmatch">', "")
+                .replace("</span>", "")
+            )
             evidence.append({
                 "source": "Wikipedia",
                 "title": r.get("title", ""),
@@ -36,19 +40,19 @@ def get_wikipedia_evidence(query):
 
     except Exception:
         return []
-    
+
 
 # ------------------------------------------------
-#  Google News RSS Evidence
+# Google News RSS Evidence
 # ------------------------------------------------
 def get_google_news_evidence(query):
     rss_url = f"https://news.google.com/rss/search?q={query.replace(' ', '+')}"
-    
+
     try:
         feed = feedparser.parse(rss_url)
         evidence = []
 
-        for entry in feed.entries[:10]:  # get top 10 news articles
+        for entry in feed.entries[:10]:
             evidence.append({
                 "source": "Google News",
                 "title": entry.get("title", ""),
@@ -63,19 +67,16 @@ def get_google_news_evidence(query):
 
 
 # ------------------------------------------------
-# Collect final evidence for fact-checking
+# Collect Final Combined Evidence
 # ------------------------------------------------
 def collect_evidence(claim):
     evidence = []
 
-    # 1. Wikipedia evidence
-    wiki_e = get_wikipedia_evidence(claim)
-    evidence.extend(wiki_e)
+    # Wikipedia first
+    evidence.extend(get_wikipedia_evidence(claim))
 
-    # 2. Google News evidence
+    # Google News next if needed
     if len(evidence) < MAX_EVIDENCE_SNIPPETS:
-        news_e = get_google_news_evidence(claim)
-        evidence.extend(news_e)
+        evidence.extend(get_google_news_evidence(claim))
 
-    # trim to max
     return evidence[:MAX_EVIDENCE_SNIPPETS]
