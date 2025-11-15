@@ -377,7 +377,7 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
             )}
 
             {/* Authenticity Status */}
-            {prediction && (
+            {prediction && (post.imageUrl || post.videoUrl) && (
               <div className={`mt-3 p-3 rounded-lg border ${
                 prediction.isFake 
                   ? 'bg-red-500/10 border-red-500/30 text-red-400' 
