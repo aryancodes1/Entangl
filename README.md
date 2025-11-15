@@ -116,10 +116,11 @@ model.compile(
    * Quantum deepfake detection endpoints
    * Image and video processing pipelines
 
-3. **Python Fact Checker Backend** (`entangl-fact-checker/main.py`):
+3. **Fact-Checking Engine** (`factcheck_engine/`):
 
-   * FastAPI API for checking text-based claims
-   * Returns verdict, confidence score, and evidence
+   * Integrates Wikipedia Search API and Google News RSS for evidence collection
+   * Uses Gemini 2.0 Flash LLM for verdict generation (true / uncertain)
+   * Exposed via FastAPI endpoint for real-time validation of user posts
 
 ### Key Features
 
@@ -130,21 +131,18 @@ model.compile(
 * **Batch Processing**: Multiple file analysis
 * **URL Support**: Direct analysis from URLs
 
-#### Fact Checking
-
-* Analyzes textual claims in posts
-* Searches reliable external information
-* Generates a factual verdict (true, false, misleading)
-* Produces confidence scores and supporting evidence
-* Integrated directly into the social media platform
-
 #### Face Processing Pipeline
 
-1. **Face Detection** using Haar cascades
-2. **Image Augmentation**: compression, blur, jitter, affine transforms
-3. **Feature Extraction** using FaceNet
-4. **Quantum Encoding** into PQC layers
-5. **Prediction** using quantum-enhanced binary classification
+1. **Face Detection**: Haar cascade classifiers with CLAHE enhancement
+2. **Image Augmentation**: JPEG compression, blur, color jitter, affine transforms
+3. **Feature Extraction** FaceNet embeddings (512D)
+4. **Quantum Encoding**: Multi-layer quantum circuit representation
+5. **Prediction**: Quantum-enhanced binary classification
+
+#### Textual Claim Verification (Fact Checker)
+*Claim Analysis*: Evaluates text-based posts for factual accuracy
+*Evidence Gathering*: Automatically retrieves supporting or contradicting information from Wikipedia and Google News
+
 
 ## 📊 Model Performance
 
@@ -176,14 +174,20 @@ pip install fastapi uvicorn
 pip install opencv-python
 pip install joblib scikit-learn
 
+# Fact Checker dependencies
+pip install requests
+pip install feedparser
+pip install python-dotenv
+pip install google-generativeai
+
 # Node.js dependencies
 npm install express cors dotenv
 ```
 
 ### Model Files Required
 
-* `tfq_face_layers_weights.h5`
-* `scaler.joblib`
+* `tfq_face_layers_weights.h5`- Trained quantum model weights
+* `scaler.joblib`- Feature scaling parameters
 
 ### API Endpoints
 
@@ -199,13 +203,6 @@ POST /predict-url
 ```bash
 POST /predict/image
 POST /predict/image-url
-```
-
-#### Fact Checking
-
-```bash
-POST /fact-check
-Body: { "claim": "text to validate" }
 ```
 
 ### Example Response
@@ -236,6 +233,8 @@ Body: { "claim": "text to validate" }
 4. Digital forensics
 5. Educational tools
 6. Claim verification for text posts
+7. Misinformation Detection
+8. Evidence-Supported Insights
 
 ## 🔮 Future Enhancements
 
