@@ -249,3 +249,21 @@
 2025-11-12 01:24:26,348 - main - INFO - Image prediction completed successfully
 2025-11-12 01:24:26,349 - main - INFO - Cleaned up temporary file: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpi3nau050/downloaded_file.jpg
 2025-11-12 01:24:26,349 - main - INFO - Cleaned up temporary directory: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpi3nau050
+2025-11-15 01:27:20,112 - fastapi - ERROR - Form data requires "python-multipart" to be installed. 
+You can install "python-multipart" with: 
+
+pip install python-multipart
+
+2025-11-15 01:30:09,206 - predictimg - INFO - Starting video analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpgqjhaldu/temp_video_06__kitchen_still.mp4
+2025-11-15 01:30:09,207 - predictimg - INFO - Parameters - max_faces: 20, seconds_range: 6, device: cpu
+2025-11-15 01:30:09,231 - predictimg - INFO - Video info - FPS: 24, frames: 915, duration: 38.12s
+2025-11-15 01:30:09,232 - predictimg - INFO - Analysis range - frames 771 to 915, step: 3
+2025-11-15 01:30:13,371 - predictimg - INFO - Face extraction completed - collected 20 faces
+2025-11-15 01:30:13,372 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-11-15 01:30:15,369 - predictimg - INFO - Running quantum model prediction...
+2025-11-15 01:30:15,716 - predictimg - INFO - Probabilities per face: [0.2602988  0.1052658  0.18623972 0.21357346 0.22008449 0.22962013
+ 0.11221388 0.28487432 0.64115334 0.4892856  0.5089764  0.64866096
+ 0.37561402 0.2899294  0.17703769 0.25593966 0.07871741 0.37335312
+ 0.21991602 0.30548078]
+2025-11-15 01:30:15,717 - predictimg - INFO - Final result - average probability: 0.2988, label: real
+2025-11-15 01:30:15,717 - predictimg - INFO - Faces classified as fake: 3/20
