@@ -1,8 +1,10 @@
+
 # Entangl - Quantum-Enhanced Deepfake Detection System
 
 ## Overview
 
 Entangl is an advanced deepfake detection system that combines classical machine learning with quantum computing to identify manipulated videos and images. The system leverages **TensorFlow Quantum (TFQ)** to create a hybrid classical-quantum neural network that can detect subtle patterns in facial features that indicate deepfake manipulation.
+In addition to deepfake detection, Entangl also includes an integrated **AI Fact Checker** that analyzes textual claims, verifies them against trusted sources, and provides structured truth assessments.
 
 ## 🧬 Quantum Model Architecture
 
@@ -75,11 +77,11 @@ def feature_vector_to_circuit_layers(features, qubits):
 
 ### Model Architecture
 
-- **Qubits**: 8 qubits arranged in a 1D grid
-- **Layers**: 12 trainable parameter layers
-- **Parameters**: ~96 trainable quantum parameters (θ values)
-- **Measurement**: Z-expectation on first qubit
-- **Classical Head**: Single dense layer with sigmoid activation
+* **Qubits**: 8 qubits arranged in a 1D grid
+* **Layers**: 12 trainable parameter layers
+* **Parameters**: ~96 trainable quantum parameters (θ values)
+* **Measurement**: Z-expectation on first qubit
+* **Classical Head**: Single dense layer with sigmoid activation
 
 ### Training Configuration
 
@@ -102,45 +104,63 @@ model.compile(
 ### Backend Services
 
 1. **Node.js Backend** (`server.js`):
-   - Express.js API for user management, posts, comments
-   - CORS configuration for frontend integration
-   - Authentication and social features
+
+   * Express.js API for user management, posts, comments
+   * CORS configuration for frontend integration
+   * Authentication and social features
+   * Integrated fact-checking workflow for post validation
 
 2. **Python Quantum Backend** (`main.py`):
-   - FastAPI server for AI/ML predictions
-   - Quantum deepfake detection endpoints
-   - Image and video processing pipelines
+
+   * FastAPI server for AI/ML predictions
+   * Quantum deepfake detection endpoints
+   * Image and video processing pipelines
+
+3. **Python Fact Checker Backend** (`entangl-fact-checker/main.py`):
+
+   * FastAPI API for checking text-based claims
+   * Returns verdict, confidence score, and evidence
 
 ### Key Features
 
 #### Deepfake Detection
-- **Video Analysis**: Processes last 6 seconds of video for real-time detection
-- **Image Analysis**: Single-frame deepfake detection
-- **Batch Processing**: Multiple file analysis
-- **URL Support**: Direct analysis from URLs
+
+* **Video Analysis**: Processes last 6 seconds of video for real-time detection
+* **Image Analysis**: Single-frame deepfake detection
+* **Batch Processing**: Multiple file analysis
+* **URL Support**: Direct analysis from URLs
+
+#### Fact Checking
+
+* Analyzes textual claims in posts
+* Searches reliable external information
+* Generates a factual verdict (true, false, misleading)
+* Produces confidence scores and supporting evidence
+* Integrated directly into the social media platform
 
 #### Face Processing Pipeline
-1. **Face Detection**: Haar cascade classifiers with CLAHE enhancement
-2. **Face Augmentation**: JPEG compression, blur, color jitter, affine transforms
-3. **Feature Extraction**: FaceNet embeddings (512D)
-4. **Quantum Encoding**: Multi-layer quantum circuit representation
-5. **Prediction**: Quantum-enhanced binary classification
+
+1. **Face Detection** using Haar cascades
+2. **Image Augmentation**: compression, blur, jitter, affine transforms
+3. **Feature Extraction** using FaceNet
+4. **Quantum Encoding** into PQC layers
+5. **Prediction** using quantum-enhanced binary classification
 
 ## 📊 Model Performance
 
 ### Advantages of Quantum Approach
 
-1. **Higher Sensitivity**: Detects subtle manipulation artifacts
-2. **Reduced False Positives**: Quantum interference patterns help distinguish real vs fake
-3. **Scalability**: Quantum parallelism for batch processing
-4. **Novel Feature Space**: Explores quantum superposition states
+1. **Higher Sensitivity**
+2. **Reduced False Positives**
+3. **Scalability**
+4. **Novel Feature Space**
 
 ### Detection Capabilities
 
-- **DeepFake Methods**: Detects FaceSwap, Face2Face, FaceShifter, etc.
-- **Quality Range**: Works on both high and low-quality manipulations
-- **Real-time**: Optimized for near real-time video analysis
-- **Robustness**: Handles compression, lighting variations
+* Detects FaceSwap, Face2Face, FaceShifter, and more
+* Works on low- and high-quality media
+* Near real-time detection
+* Resilient to noise and compression
 
 ## 🔧 Installation & Usage
 
@@ -162,31 +182,30 @@ npm install express cors dotenv
 
 ### Model Files Required
 
-- `tfq_face_layers_weights.h5` - Trained quantum model weights
-- `scaler.joblib` - Feature scaling parameters
+* `tfq_face_layers_weights.h5`
+* `scaler.joblib`
 
 ### API Endpoints
 
 #### Video Analysis
+
 ```bash
 POST /predict
-Content-Type: multipart/form-data
-Body: video file + parameters
-
 POST /predict-url
-Content-Type: application/json
-Body: {"url": "video_url", "max_faces": 20, "seconds_range": 6}
 ```
 
 #### Image Analysis
+
 ```bash
 POST /predict/image
-Content-Type: multipart/form-data
-Body: image file + parameters
-
 POST /predict/image-url
-Content-Type: application/json
-Body: {"url": "image_url", "max_faces": 5}
+```
+
+#### Fact Checking
+
+```bash
+POST /fact-check
+Body: { "claim": "text to validate" }
 ```
 
 ### Example Response
@@ -211,45 +230,46 @@ Body: {"url": "image_url", "max_faces": 5}
 
 ## 🎯 Use Cases
 
-1. **Social Media Verification**: Detect manipulated content in posts
-2. **News Verification**: Authenticate video evidence
-3. **Content Moderation**: Automated deepfake filtering
-4. **Digital Forensics**: Investigation of multimedia evidence
-5. **Educational Tools**: Demonstrate quantum ML applications
+1. Social media verification
+2. News verification
+3. Content moderation
+4. Digital forensics
+5. Educational tools
+6. Claim verification for text posts
 
 ## 🔮 Future Enhancements
 
-1. **More Qubits**: Scale to 16+ qubits for higher capacity
-2. **Hybrid Architectures**: Combine multiple quantum circuits
-3. **Real-time Streaming**: Live video analysis
-4. **Advanced Metrics**: Confidence scores, localization
-5. **Multi-modal**: Audio-visual deepfake detection
+1. More qubits
+2. Hybrid architectures
+3. Real-time streaming
+4. Advanced metrics
+5. Multi-modal detection
 
 ## 📚 Research Background
 
 This system is based on research in:
-- Quantum Machine Learning (QML)
-- Variational Quantum Eigensolvers (VQE)
-- Parameterized Quantum Circuits (PQC)
-- Hybrid Classical-Quantum Neural Networks
-- Deepfake Detection using CNNs
+
+* Quantum Machine Learning
+* VQE
+* PQC
+* Hybrid Classical-Quantum Networks
+* Deepfake Detection using CNNs
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create feature branch (`git checkout -b feature/quantum-enhancement`)
-3. Commit changes (`git commit -am 'Add quantum enhancement'`)
-4. Push to branch (`git push origin feature/quantum-enhancement`)
-5. Create Pull Request
-
+2. Create a feature branch
+3. Commit changes
+4. Push the branch
+5. Open a pull request
 
 ## ⚡ Quantum Computing Disclaimer
 
 This system requires TensorFlow Quantum and compatible hardware/simulators. For production deployment, consider:
-- Classical fallback modes
-- Hardware requirements
-- Quantum simulation overhead
-- Cloud quantum services integration
+
+* Classical fallback
+* Hardware limits
+* Quantum simulation cost
+* Cloud quantum services
 
 ---
-
