@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from factcheck_engine.run_check import check_fact
+import uvicorn
 
 app = FastAPI()
 
@@ -18,3 +19,6 @@ class ClaimRequest(BaseModel):
 def fact_check(request: ClaimRequest):
     result = check_fact(request.claim)
     return result
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=9000)
