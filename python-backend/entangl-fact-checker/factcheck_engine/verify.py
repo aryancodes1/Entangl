@@ -20,7 +20,7 @@ FACT_SCHEMA = {
             "items": {"type": "number"}
         }
     },
-    "required": ["verdict", "confidence", "explanation"]
+    "required": ["verdict", "confidence", "explanation", "used_evidence_indices"]
 }
 
 
@@ -44,8 +44,6 @@ CLAIM:
 
 EVIDENCE:
 {evidence_text}
-
-Your output MUST be a single JSON object and nothing else.
 """
 
     try:
@@ -57,10 +55,22 @@ Your output MUST be a single JSON object and nothing else.
                 }
             ],
             model=GROQ_MODEL_NAME,
-            response_format={"type": "json_object"},
+            tools=[
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "fact_check_result",
+                        "description": "The result of the fact check.",
+                        "parameters": FACT_SCHEMA,
+                    },
+                }
+            ],
+            tool_choice={"type": "function", "function": {"name": "fact_check_result"}},
         )
-        response_text = chat_completion.choices[0].message.content
-        return json.loads(response_text)
+        response_message = chat_completion.choices[0].message
+        tool_call = response_message.tool_calls[0]
+        function_args = tool_call.function.arguments
+        return json.loads(function_args)
 
     except Exception as e:
         return {
