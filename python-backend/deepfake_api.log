@@ -267,3 +267,158 @@ pip install python-multipart
  0.21991602 0.30548078]
 2025-11-15 01:30:15,717 - predictimg - INFO - Final result - average probability: 0.2988, label: real
 2025-11-15 01:30:15,717 - predictimg - INFO - Faces classified as fake: 3/20
+2025-11-19 10:26:57,980 - main - INFO - Image prediction request received for URL: https://entangl-bucket.s3.eu-north-1.amazonaws.com/images/e31c0b1b-faf1-4aef-9f35-a1e4655c864b.jpg
+2025-11-19 10:26:57,981 - main - INFO - Parameters - max_faces: 5
+2025-11-19 10:26:57,982 - main - INFO - Created temporary directory: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp9xwl5385
+2025-11-19 10:26:57,982 - main - INFO - Starting file download...
+2025-11-19 10:26:57,982 - main - INFO - Starting download from URL: https://entangl-bucket.s3.eu-north-1.amazonaws.com/images/e31c0b1b-faf1-4aef-9f35-a1e4655c864b.jpg
+2025-11-19 10:26:57,982 - main - INFO - Making HTTP request...
+2025-11-19 10:26:59,300 - main - INFO - Response received - Content-Type: image/jpeg, Content-Length: 57696
+2025-11-19 10:26:59,301 - main - INFO - Downloading to temporary file: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp9xwl5385/downloaded_file.jpg
+2025-11-19 10:26:59,573 - main - INFO - Download completed successfully!
+2025-11-19 10:26:59,575 - main - INFO - File size: 0.06 MB
+2025-11-19 10:26:59,575 - main - INFO - Download time: 1.59 seconds
+2025-11-19 10:26:59,576 - main - INFO - Download speed: 0.03 MB/s
+2025-11-19 10:26:59,577 - main - INFO - File downloaded successfully to: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp9xwl5385/downloaded_file.jpg
+2025-11-19 10:26:59,577 - main - INFO - Starting image analysis...
+2025-11-19 10:26:59,577 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp9xwl5385/downloaded_file.jpg
+2025-11-19 10:26:59,578 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-11-19 10:26:59,605 - predictimg - INFO - Image loaded - shape: (478, 640, 3)
+2025-11-19 10:26:59,605 - predictimg - INFO - Detecting faces in image...
+2025-11-19 10:26:59,947 - predictimg - INFO - Found 1 face(s) in image
+2025-11-19 10:27:00,398 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-11-19 10:27:00,398 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-11-19 10:27:00,499 - predictimg - INFO - Running quantum model prediction...
+2025-11-19 10:27:00,754 - predictimg - INFO - Probabilities per face: [0.63616]
+2025-11-19 10:27:00,755 - predictimg - INFO - Final result - average probability: 0.6362, label: fake
+2025-11-19 10:27:00,755 - main - INFO - Image analysis completed in 1.18 seconds
+2025-11-19 10:27:00,755 - main - INFO - Analysis result - probability: 0.6362, label: fake, faces_found: 1
+2025-11-19 10:27:00,755 - main - INFO - Image prediction completed successfully
+2025-11-19 10:27:00,755 - main - INFO - Cleaned up temporary file: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp9xwl5385/downloaded_file.jpg
+2025-11-19 10:27:00,755 - main - INFO - Cleaned up temporary directory: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp9xwl5385
+2025-11-19 10:32:52,258 - main - INFO - Video prediction request received for URL: https://entangl-bucket.s3.eu-north-1.amazonaws.com/videos/ed8ffa91-a55b-40ca-990b-96fac3394591.mp4
+2025-11-19 10:32:52,259 - main - INFO - Parameters - max_faces: 20, seconds_range: 6
+2025-11-19 10:32:52,260 - main - INFO - Created temporary directory: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpap8aaatt
+2025-11-19 10:32:52,260 - main - INFO - Starting file download...
+2025-11-19 10:32:52,261 - main - INFO - Starting download from URL: https://entangl-bucket.s3.eu-north-1.amazonaws.com/videos/ed8ffa91-a55b-40ca-990b-96fac3394591.mp4
+2025-11-19 10:32:52,261 - main - INFO - Making HTTP request...
+2025-11-19 10:32:53,583 - main - INFO - Response received - Content-Type: video/mp4, Content-Length: 7108028
+2025-11-19 10:32:53,584 - main - INFO - Downloading to temporary file: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpap8aaatt/downloaded_file.mp4
+2025-11-19 10:32:54,796 - main - INFO - Downloaded 1.0 MB...
+2025-11-19 10:32:55,108 - main - INFO - Downloaded 2.0 MB...
+2025-11-19 10:32:55,276 - main - INFO - Downloaded 3.0 MB...
+2025-11-19 10:32:55,419 - main - INFO - Downloaded 4.0 MB...
+2025-11-19 10:32:55,539 - main - INFO - Downloaded 5.0 MB...
+2025-11-19 10:32:55,648 - main - INFO - Downloaded 6.0 MB...
+2025-11-19 10:32:55,736 - main - INFO - Download completed successfully!
+2025-11-19 10:32:55,737 - main - INFO - File size: 6.78 MB
+2025-11-19 10:32:55,738 - main - INFO - Download time: 3.48 seconds
+2025-11-19 10:32:55,738 - main - INFO - Download speed: 1.95 MB/s
+2025-11-19 10:32:55,739 - main - INFO - File downloaded successfully to: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpap8aaatt/downloaded_file.mp4
+2025-11-19 10:32:55,739 - main - INFO - Starting video analysis...
+2025-11-19 10:32:55,739 - predictimg - INFO - Starting video analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpap8aaatt/downloaded_file.mp4
+2025-11-19 10:32:55,739 - predictimg - INFO - Parameters - max_faces: 20, seconds_range: 6, device: cpu
+2025-11-19 10:32:55,800 - predictimg - INFO - Video info - FPS: 24, frames: 915, duration: 38.12s
+2025-11-19 10:32:55,800 - predictimg - INFO - Analysis range - frames 771 to 915, step: 3
+2025-11-19 10:32:59,303 - predictimg - INFO - Face extraction completed - collected 20 faces
+2025-11-19 10:32:59,303 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-11-19 10:33:01,273 - predictimg - INFO - Running quantum model prediction...
+2025-11-19 10:33:01,450 - predictimg - INFO - Probabilities per face: [0.2961098  0.16744438 0.2202147  0.14965388 0.16361204 0.24302208
+ 0.19971171 0.34518793 0.475282   0.6376712  0.60972035 0.5325574
+ 0.35641944 0.3819255  0.18144277 0.09495664 0.07897162 0.3221969
+ 0.3214147  0.22535187]
+2025-11-19 10:33:01,450 - predictimg - INFO - Final result - average probability: 0.3001, label: real
+2025-11-19 10:33:01,450 - predictimg - INFO - Faces classified as fake: 3/20
+2025-11-19 10:33:01,452 - main - INFO - Video analysis completed in 5.71 seconds
+2025-11-19 10:33:01,452 - main - INFO - Analysis result - probability: 0.3001, label: real
+2025-11-19 10:33:01,452 - main - INFO - Video prediction completed successfully
+2025-11-19 10:33:01,453 - main - INFO - Cleaned up temporary file: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpap8aaatt/downloaded_file.mp4
+2025-11-19 10:33:01,453 - main - INFO - Cleaned up temporary directory: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpap8aaatt
+2025-12-08 16:19:01,041 - main - INFO - Image prediction request received for URL: https://entangl-bucket.s3.eu-north-1.amazonaws.com/images/29901dd9-f170-4616-aaaa-5ef9458770db.jpg
+2025-12-08 16:19:01,044 - main - INFO - Parameters - max_faces: 5
+2025-12-08 16:19:01,045 - main - INFO - Created temporary directory: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpysr3jguc
+2025-12-08 16:19:01,045 - main - INFO - Starting file download...
+2025-12-08 16:19:01,045 - main - INFO - Starting download from URL: https://entangl-bucket.s3.eu-north-1.amazonaws.com/images/29901dd9-f170-4616-aaaa-5ef9458770db.jpg
+2025-12-08 16:19:01,045 - main - INFO - Making HTTP request...
+2025-12-08 16:19:02,532 - main - INFO - Response received - Content-Type: image/jpeg, Content-Length: 76336
+2025-12-08 16:19:02,532 - main - INFO - Downloading to temporary file: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpysr3jguc/downloaded_file.jpg
+2025-12-08 16:19:03,121 - main - INFO - Download completed successfully!
+2025-12-08 16:19:03,122 - main - INFO - File size: 0.07 MB
+2025-12-08 16:19:03,123 - main - INFO - Download time: 2.08 seconds
+2025-12-08 16:19:03,124 - main - INFO - Download speed: 0.04 MB/s
+2025-12-08 16:19:03,127 - main - INFO - File downloaded successfully to: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpysr3jguc/downloaded_file.jpg
+2025-12-08 16:19:03,128 - main - INFO - Starting image analysis...
+2025-12-08 16:19:03,128 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpysr3jguc/downloaded_file.jpg
+2025-12-08 16:19:03,128 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 16:19:03,151 - predictimg - INFO - Image loaded - shape: (630, 630, 3)
+2025-12-08 16:19:03,151 - predictimg - INFO - Detecting faces in image...
+2025-12-08 16:19:04,398 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 16:19:04,715 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 16:19:04,715 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 16:19:04,818 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 16:19:05,018 - predictimg - INFO - Probabilities per face: [0.5873189]
+2025-12-08 16:19:05,019 - predictimg - INFO - Final result - average probability: 0.5873, label: fake
+2025-12-08 16:19:05,019 - main - INFO - Image analysis completed in 1.89 seconds
+2025-12-08 16:19:05,019 - main - INFO - Analysis result - probability: 0.5873, label: fake, faces_found: 1
+2025-12-08 16:19:05,019 - main - INFO - Image prediction completed successfully
+2025-12-08 16:19:05,019 - main - INFO - Cleaned up temporary file: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpysr3jguc/downloaded_file.jpg
+2025-12-08 16:19:05,019 - main - INFO - Cleaned up temporary directory: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpysr3jguc
+2025-12-08 16:41:06,724 - main - INFO - Image prediction request received for URL: https://entangl-bucket.s3.eu-north-1.amazonaws.com/images/5edd449e-3b93-454e-910c-31cd03ad0b3f.png
+2025-12-08 16:41:06,725 - main - INFO - Parameters - max_faces: 5
+2025-12-08 16:41:06,726 - main - INFO - Created temporary directory: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmph2pkvwn6
+2025-12-08 16:41:06,727 - main - INFO - Starting file download...
+2025-12-08 16:41:06,727 - main - INFO - Starting download from URL: https://entangl-bucket.s3.eu-north-1.amazonaws.com/images/5edd449e-3b93-454e-910c-31cd03ad0b3f.png
+2025-12-08 16:41:06,727 - main - INFO - Making HTTP request...
+2025-12-08 16:41:08,167 - main - INFO - Response received - Content-Type: image/png, Content-Length: 1129596
+2025-12-08 16:41:08,168 - main - INFO - Downloading to temporary file: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmph2pkvwn6/downloaded_file.jpg
+2025-12-08 16:41:09,625 - main - INFO - Downloaded 1.0 MB...
+2025-12-08 16:41:09,653 - main - INFO - Download completed successfully!
+2025-12-08 16:41:09,654 - main - INFO - File size: 1.08 MB
+2025-12-08 16:41:09,655 - main - INFO - Download time: 2.93 seconds
+2025-12-08 16:41:09,656 - main - INFO - Download speed: 0.37 MB/s
+2025-12-08 16:41:09,657 - main - INFO - File downloaded successfully to: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmph2pkvwn6/downloaded_file.jpg
+2025-12-08 16:41:09,657 - main - INFO - Starting image analysis...
+2025-12-08 16:41:09,657 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmph2pkvwn6/downloaded_file.jpg
+2025-12-08 16:41:09,657 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 16:41:09,696 - predictimg - INFO - Image loaded - shape: (856, 866, 3)
+2025-12-08 16:41:09,696 - predictimg - INFO - Detecting faces in image...
+2025-12-08 16:41:09,750 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 16:41:09,879 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 16:41:09,879 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 16:41:09,976 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 16:41:10,010 - predictimg - INFO - Probabilities per face: [0.5976505]
+2025-12-08 16:41:10,010 - predictimg - INFO - Final result - average probability: 0.5977, label: fake
+2025-12-08 16:41:10,010 - main - INFO - Image analysis completed in 0.35 seconds
+2025-12-08 16:41:10,010 - main - INFO - Analysis result - probability: 0.5977, label: fake, faces_found: 1
+2025-12-08 16:41:10,010 - main - INFO - Image prediction completed successfully
+2025-12-08 16:41:10,011 - main - INFO - Cleaned up temporary file: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmph2pkvwn6/downloaded_file.jpg
+2025-12-08 16:41:10,011 - main - INFO - Cleaned up temporary directory: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmph2pkvwn6
+2025-12-08 16:42:05,017 - main - INFO - Image prediction request received for URL: https://entangl-bucket.s3.eu-north-1.amazonaws.com/images/681a3e4f-2f1c-4b23-8a7b-ae47a5251d80.png
+2025-12-08 16:42:05,019 - main - INFO - Parameters - max_faces: 5
+2025-12-08 16:42:05,020 - main - INFO - Created temporary directory: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpi6dia1um
+2025-12-08 16:42:05,020 - main - INFO - Starting file download...
+2025-12-08 16:42:05,020 - main - INFO - Starting download from URL: https://entangl-bucket.s3.eu-north-1.amazonaws.com/images/681a3e4f-2f1c-4b23-8a7b-ae47a5251d80.png
+2025-12-08 16:42:05,020 - main - INFO - Making HTTP request...
+2025-12-08 16:42:06,588 - main - INFO - Response received - Content-Type: image/png, Content-Length: 389718
+2025-12-08 16:42:06,588 - main - INFO - Downloading to temporary file: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpi6dia1um/downloaded_file.jpg
+2025-12-08 16:42:07,670 - main - INFO - Download completed successfully!
+2025-12-08 16:42:07,671 - main - INFO - File size: 0.37 MB
+2025-12-08 16:42:07,671 - main - INFO - Download time: 2.65 seconds
+2025-12-08 16:42:07,671 - main - INFO - Download speed: 0.14 MB/s
+2025-12-08 16:42:07,672 - main - INFO - File downloaded successfully to: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpi6dia1um/downloaded_file.jpg
+2025-12-08 16:42:07,672 - main - INFO - Starting image analysis...
+2025-12-08 16:42:07,673 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpi6dia1um/downloaded_file.jpg
+2025-12-08 16:42:07,673 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 16:42:07,686 - predictimg - INFO - Image loaded - shape: (582, 516, 3)
+2025-12-08 16:42:07,686 - predictimg - INFO - Detecting faces in image...
+2025-12-08 16:42:07,722 - predictimg - INFO - Found 2 face(s) in image
+2025-12-08 16:42:07,907 - predictimg - INFO - Face processing completed - processed 2 faces
+2025-12-08 16:42:07,907 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 16:42:08,093 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 16:42:08,142 - predictimg - INFO - Probabilities per face: [0.52789456 0.6893099 ]
+2025-12-08 16:42:08,142 - predictimg - INFO - Final result - average probability: 0.6086, label: fake
+2025-12-08 16:42:08,143 - main - INFO - Image analysis completed in 0.47 seconds
+2025-12-08 16:42:08,143 - main - INFO - Analysis result - probability: 0.6086, label: fake, faces_found: 2
+2025-12-08 16:42:08,143 - main - INFO - Image prediction completed successfully
+2025-12-08 16:42:08,143 - main - INFO - Cleaned up temporary file: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpi6dia1um/downloaded_file.jpg
+2025-12-08 16:42:08,143 - main - INFO - Cleaned up temporary directory: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpi6dia1um

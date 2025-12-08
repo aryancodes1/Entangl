@@ -9,5 +9,5 @@ Definitions:
 - FALSE = Evidence contradicts the claim.
 - UNCERTAIN = Evidence is insufficient, vague, or off-topic.
 
-Your output MUST be a JSON object only.
+Your output MUST be a single JSON object and nothing else. Do not wrap it in markdown.
 """

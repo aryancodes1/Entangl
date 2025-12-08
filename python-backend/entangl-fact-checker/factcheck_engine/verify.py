@@ -1,16 +1,13 @@
 import json
-import google.generativeai as genai
+from groq import Groq
 
 # Allow both runtime modes (package + direct)
 try:
-    from .settings import GEMINI_API_KEY, GEMINI_MODEL_NAME
+    from .settings import GROQ_API_KEY, GROQ_MODEL_NAME
     from .prompt_store import FACT_CHECK_PROMPT
 except ImportError:
-    from settings import GEMINI_API_KEY, GEMINI_MODEL_NAME
+    from settings import GROQ_API_KEY, GROQ_MODEL_NAME
     from prompt_store import FACT_CHECK_PROMPT
-
-# Configure Gemini
-genai.configure(api_key=GEMINI_API_KEY)
 
 FACT_SCHEMA = {
     "type": "object",
@@ -32,13 +29,7 @@ def verify_claim_with_llm(claim: str, evidence: list):
     Returns a DICT, never raw JSON string.
     """
 
-    model = genai.GenerativeModel(
-        GEMINI_MODEL_NAME,
-        generation_config={
-            "response_mime_type": "application/json",
-            "response_schema": FACT_SCHEMA
-        }
-    )
+    client = Groq(api_key=GROQ_API_KEY)
 
     # Build evidence text
     evidence_text = ""
@@ -54,12 +45,22 @@ CLAIM:
 EVIDENCE:
 {evidence_text}
 
-Return ONLY a JSON object following the schema.
+Your output MUST be a single JSON object and nothing else.
 """
 
     try:
-        response = model.generate_content(prompt)
-        return json.loads(response.text)
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
+            model=GROQ_MODEL_NAME,
+            response_format={"type": "json_object"},
+        )
+        response_text = chat_completion.choices[0].message.content
+        return json.loads(response_text)
 
     except Exception as e:
         return {
