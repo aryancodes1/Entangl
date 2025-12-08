@@ -33,7 +33,8 @@ class ClaimRequest(BaseModel):
 @app.post("/fact-check")
 def fact_check(request: ClaimRequest):
     result = check_fact(request.claim)
-    return result
+    # Convert all keys to lowercase for a consistent API response
+    return {k.lower(): v for k, v in result.items()}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=9000)
