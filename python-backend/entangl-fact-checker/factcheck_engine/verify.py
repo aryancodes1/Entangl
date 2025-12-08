@@ -39,11 +39,16 @@ def verify_claim_with_llm(claim: str, evidence: list):
     prompt = f"""
 {FACT_CHECK_PROMPT}
 
+You must provide your response as a single JSON object that strictly follows this JSON schema:
+{json.dumps(FACT_SCHEMA, indent=2)}
+
 CLAIM:
 {claim}
 
 EVIDENCE:
 {evidence_text}
+
+Your output MUST be a single JSON object and nothing else.
 """
 
     try:
@@ -55,22 +60,10 @@ EVIDENCE:
                 }
             ],
             model=GROQ_MODEL_NAME,
-            tools=[
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "fact_check_result",
-                        "description": "The result of the fact check.",
-                        "parameters": FACT_SCHEMA,
-                    },
-                }
-            ],
-            tool_choice={"type": "function", "function": {"name": "fact_check_result"}},
+            response_format={"type": "json_object"},
         )
-        response_message = chat_completion.choices[0].message
-        tool_call = response_message.tool_calls[0]
-        function_args = tool_call.function.arguments
-        return json.loads(function_args)
+        response_text = chat_completion.choices[0].message.content
+        return json.loads(response_text)
 
     except Exception as e:
         return {
