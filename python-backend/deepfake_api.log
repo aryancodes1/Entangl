@@ -422,3 +422,523 @@ pip install python-multipart
 2025-12-08 16:42:08,143 - main - INFO - Image prediction completed successfully
 2025-12-08 16:42:08,143 - main - INFO - Cleaned up temporary file: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpi6dia1um/downloaded_file.jpg
 2025-12-08 16:42:08,143 - main - INFO - Cleaned up temporary directory: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpi6dia1um
+2025-12-08 21:53:50,455 - predictimg - INFO - Starting video analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpy92xlnv3/temp_video_vid1 (online-video-cutter.com).mp4
+2025-12-08 21:53:50,457 - predictimg - INFO - Parameters - max_faces: 20, seconds_range: 6, device: cpu
+2025-12-08 21:53:50,521 - predictimg - INFO - Video info - FPS: 29, frames: 382, duration: 13.17s
+2025-12-08 21:53:50,521 - predictimg - INFO - Analysis range - frames 208 to 382, step: 4
+2025-12-08 21:53:55,406 - predictimg - INFO - Face extraction completed - collected 1 faces
+2025-12-08 21:53:55,406 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 21:53:55,537 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 21:53:55,747 - predictimg - INFO - Probabilities per face: [0.10827753]
+2025-12-08 21:53:55,747 - predictimg - INFO - Final result - average probability: 0.1083, label: real
+2025-12-08 21:53:55,747 - predictimg - INFO - Faces classified as fake: 0/1
+2025-12-08 21:54:20,219 - predictimg - INFO - Starting video analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp_vesj6fd/temp_video_vid1 (online-video-cutter.com).mp4
+2025-12-08 21:54:20,220 - predictimg - INFO - Parameters - max_faces: 20, seconds_range: 6, device: cpu
+2025-12-08 21:54:20,237 - predictimg - INFO - Video info - FPS: 29, frames: 382, duration: 13.17s
+2025-12-08 21:54:20,237 - predictimg - INFO - Analysis range - frames 208 to 382, step: 4
+2025-12-08 21:54:24,426 - predictimg - INFO - Face extraction completed - collected 1 faces
+2025-12-08 21:54:24,426 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 21:54:24,528 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 21:54:24,557 - predictimg - INFO - Probabilities per face: [0.16201118]
+2025-12-08 21:54:24,557 - predictimg - INFO - Final result - average probability: 0.1620, label: real
+2025-12-08 21:54:24,557 - predictimg - INFO - Faces classified as fake: 0/1
+2025-12-08 21:54:32,515 - predictimg - INFO - Starting video analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp_q2lk94b/temp_video_vid1 (online-video-cutter.com) (1).mp4
+2025-12-08 21:54:32,516 - predictimg - INFO - Parameters - max_faces: 20, seconds_range: 6, device: cpu
+2025-12-08 21:54:32,530 - predictimg - INFO - Video info - FPS: 29, frames: 382, duration: 13.17s
+2025-12-08 21:54:32,530 - predictimg - INFO - Analysis range - frames 208 to 382, step: 4
+2025-12-08 21:54:35,587 - predictimg - INFO - Face extraction completed - collected 2 faces
+2025-12-08 21:54:35,587 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 21:54:35,788 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 21:54:35,835 - predictimg - INFO - Probabilities per face: [0.25447884 0.2698318 ]
+2025-12-08 21:54:35,836 - predictimg - INFO - Final result - average probability: 0.2622, label: real
+2025-12-08 21:54:35,836 - predictimg - INFO - Faces classified as fake: 0/2
+2025-12-08 21:56:52,927 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpsf6o4ava/temp_image_2025_11image_12_43_398183357card-ll.jpg
+2025-12-08 21:56:52,928 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 21:56:52,937 - predictimg - INFO - Image loaded - shape: (960, 640, 3)
+2025-12-08 21:56:52,938 - predictimg - INFO - Detecting faces in image...
+2025-12-08 21:56:53,003 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 21:56:53,141 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 21:56:53,141 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 21:56:53,247 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 21:56:53,286 - predictimg - INFO - Probabilities per face: [0.41435477]
+2025-12-08 21:56:53,286 - predictimg - INFO - Final result - average probability: 0.4144, label: real
+2025-12-08 21:56:55,493 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpsj53lkbo/temp_image_2025_11image_12_43_398183357card-ll.jpg
+2025-12-08 21:56:55,493 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 21:56:55,499 - predictimg - INFO - Image loaded - shape: (960, 640, 3)
+2025-12-08 21:56:55,499 - predictimg - INFO - Detecting faces in image...
+2025-12-08 21:56:55,560 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 21:56:55,654 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 21:56:55,654 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 21:56:55,751 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 21:56:55,777 - predictimg - INFO - Probabilities per face: [0.7335526]
+2025-12-08 21:56:55,777 - predictimg - INFO - Final result - average probability: 0.7336, label: fake
+2025-12-08 22:01:21,085 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpurmt5_fg/temp_image_Screenshot 2025-12-08 at 10.00.09 PM.png
+2025-12-08 22:01:21,086 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:01:21,112 - predictimg - INFO - Image loaded - shape: (760, 1128, 3)
+2025-12-08 22:01:21,112 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:01:21,163 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:01:21,296 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:01:21,296 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:01:21,399 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:01:21,437 - predictimg - INFO - Probabilities per face: [0.57439005]
+2025-12-08 22:01:21,437 - predictimg - INFO - Final result - average probability: 0.5744, label: fake
+2025-12-08 22:01:29,595 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpt1yp31tg/temp_image_Screenshot 2025-12-08 at 10.00.09 PM.png
+2025-12-08 22:01:29,595 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:01:29,615 - predictimg - INFO - Image loaded - shape: (760, 1128, 3)
+2025-12-08 22:01:29,615 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:01:29,663 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:01:29,755 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:01:29,755 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:01:29,854 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:01:29,879 - predictimg - INFO - Probabilities per face: [0.7078541]
+2025-12-08 22:01:29,879 - predictimg - INFO - Final result - average probability: 0.7079, label: fake
+2025-12-08 22:01:38,947 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpvimnsgei/temp_image_Screenshot 2025-12-08 at 10.00.09 PM.png
+2025-12-08 22:01:38,947 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:01:38,967 - predictimg - INFO - Image loaded - shape: (760, 1128, 3)
+2025-12-08 22:01:38,967 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:01:39,014 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:01:39,104 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:01:39,104 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:01:39,199 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:01:39,225 - predictimg - INFO - Probabilities per face: [0.40754193]
+2025-12-08 22:01:39,225 - predictimg - INFO - Final result - average probability: 0.4075, label: real
+2025-12-08 22:01:51,958 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpwv8m0kvu/temp_image_Screenshot 2025-12-08 at 10.00.09 PM.png
+2025-12-08 22:01:51,958 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:01:51,981 - predictimg - INFO - Image loaded - shape: (760, 1128, 3)
+2025-12-08 22:01:51,982 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:01:52,028 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:01:52,121 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:01:52,121 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:01:52,215 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:01:52,240 - predictimg - INFO - Probabilities per face: [0.65254843]
+2025-12-08 22:01:52,240 - predictimg - INFO - Final result - average probability: 0.6525, label: fake
+2025-12-08 22:01:54,397 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpr0s60bph/temp_image_Screenshot 2025-12-08 at 10.00.09 PM.png
+2025-12-08 22:01:54,397 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:01:54,414 - predictimg - INFO - Image loaded - shape: (760, 1128, 3)
+2025-12-08 22:01:54,415 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:01:54,463 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:01:54,553 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:01:54,554 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:01:54,651 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:01:54,676 - predictimg - INFO - Probabilities per face: [0.38920206]
+2025-12-08 22:01:54,676 - predictimg - INFO - Final result - average probability: 0.3892, label: real
+2025-12-08 22:01:55,552 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpqtv6vje_/temp_image_Screenshot 2025-12-08 at 10.00.09 PM.png
+2025-12-08 22:01:55,552 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:01:55,571 - predictimg - INFO - Image loaded - shape: (760, 1128, 3)
+2025-12-08 22:01:55,571 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:01:55,619 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:01:55,711 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:01:55,711 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:01:55,808 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:01:55,832 - predictimg - INFO - Probabilities per face: [0.29569343]
+2025-12-08 22:01:55,833 - predictimg - INFO - Final result - average probability: 0.2957, label: real
+2025-12-08 22:01:56,585 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmphdnr06t6/temp_image_Screenshot 2025-12-08 at 10.00.09 PM.png
+2025-12-08 22:01:56,585 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:01:56,605 - predictimg - INFO - Image loaded - shape: (760, 1128, 3)
+2025-12-08 22:01:56,605 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:01:56,653 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:01:56,744 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:01:56,744 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:01:56,841 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:01:56,866 - predictimg - INFO - Probabilities per face: [0.33584118]
+2025-12-08 22:01:56,866 - predictimg - INFO - Final result - average probability: 0.3358, label: real
+2025-12-08 22:01:57,534 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpcxy58w95/temp_image_Screenshot 2025-12-08 at 10.00.09 PM.png
+2025-12-08 22:01:57,534 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:01:57,555 - predictimg - INFO - Image loaded - shape: (760, 1128, 3)
+2025-12-08 22:01:57,555 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:01:57,603 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:01:57,694 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:01:57,695 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:01:57,795 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:01:57,822 - predictimg - INFO - Probabilities per face: [0.22740039]
+2025-12-08 22:01:57,822 - predictimg - INFO - Final result - average probability: 0.2274, label: real
+2025-12-08 22:01:58,503 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpw57m_cnx/temp_image_Screenshot 2025-12-08 at 10.00.09 PM.png
+2025-12-08 22:01:58,503 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:01:58,522 - predictimg - INFO - Image loaded - shape: (760, 1128, 3)
+2025-12-08 22:01:58,522 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:01:58,570 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:01:58,659 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:01:58,659 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:01:58,757 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:01:58,782 - predictimg - INFO - Probabilities per face: [0.2773722]
+2025-12-08 22:01:58,782 - predictimg - INFO - Final result - average probability: 0.2774, label: real
+2025-12-08 22:01:59,292 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpqa8oo666/temp_image_Screenshot 2025-12-08 at 10.00.09 PM.png
+2025-12-08 22:01:59,292 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:01:59,312 - predictimg - INFO - Image loaded - shape: (760, 1128, 3)
+2025-12-08 22:01:59,313 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:01:59,358 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:01:59,449 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:01:59,449 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:01:59,546 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:01:59,571 - predictimg - INFO - Probabilities per face: [0.5359549]
+2025-12-08 22:01:59,571 - predictimg - INFO - Final result - average probability: 0.5360, label: fake
+2025-12-08 22:02:00,019 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpqbyfikr_/temp_image_Screenshot 2025-12-08 at 10.00.09 PM.png
+2025-12-08 22:02:00,019 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:02:00,038 - predictimg - INFO - Image loaded - shape: (760, 1128, 3)
+2025-12-08 22:02:00,039 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:02:00,086 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:02:00,176 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:02:00,176 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:02:00,275 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:02:00,299 - predictimg - INFO - Probabilities per face: [0.35196596]
+2025-12-08 22:02:00,300 - predictimg - INFO - Final result - average probability: 0.3520, label: real
+2025-12-08 22:02:00,836 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpnc3390c4/temp_image_Screenshot 2025-12-08 at 10.00.09 PM.png
+2025-12-08 22:02:00,836 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:02:00,855 - predictimg - INFO - Image loaded - shape: (760, 1128, 3)
+2025-12-08 22:02:00,855 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:02:00,903 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:02:00,993 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:02:00,994 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:02:01,090 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:02:01,114 - predictimg - INFO - Probabilities per face: [0.25248903]
+2025-12-08 22:02:01,115 - predictimg - INFO - Final result - average probability: 0.2525, label: real
+2025-12-08 22:02:02,041 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpjzcruauu/temp_image_Screenshot 2025-12-08 at 10.00.09 PM.png
+2025-12-08 22:02:02,041 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:02:02,060 - predictimg - INFO - Image loaded - shape: (760, 1128, 3)
+2025-12-08 22:02:02,060 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:02:02,108 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:02:02,198 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:02:02,198 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:02:02,495 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:02:02,519 - predictimg - INFO - Probabilities per face: [0.65449816]
+2025-12-08 22:02:02,519 - predictimg - INFO - Final result - average probability: 0.6545, label: fake
+2025-12-08 22:02:05,082 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpurm0u7z4/temp_image_Screenshot 2025-12-08 at 10.00.09 PM.png
+2025-12-08 22:02:05,083 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:02:05,100 - predictimg - INFO - Image loaded - shape: (760, 1128, 3)
+2025-12-08 22:02:05,101 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:02:05,147 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:02:05,246 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:02:05,246 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:02:05,347 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:02:05,371 - predictimg - INFO - Probabilities per face: [0.3457165]
+2025-12-08 22:02:05,371 - predictimg - INFO - Final result - average probability: 0.3457, label: real
+2025-12-08 22:04:32,641 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmphbxm7uh6/temp_image_WhatsApp Image 2025-12-08 at 22.03.46.jpeg
+2025-12-08 22:04:32,642 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:04:32,658 - predictimg - INFO - Image loaded - shape: (1280, 720, 3)
+2025-12-08 22:04:32,658 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:04:32,747 - predictimg - WARNING - No faces detected in image
+2025-12-08 22:04:36,031 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpd3w3zkwh/temp_image_WhatsApp Image 2025-12-08 at 22.03.46.jpeg
+2025-12-08 22:04:36,031 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:04:36,046 - predictimg - INFO - Image loaded - shape: (1280, 720, 3)
+2025-12-08 22:04:36,046 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:04:36,120 - predictimg - WARNING - No faces detected in image
+2025-12-08 22:05:31,793 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp9pppvgpy/temp_image_WhatsApp Image 2025-12-08 at 22.05.17.jpeg
+2025-12-08 22:05:31,794 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:05:31,814 - predictimg - INFO - Image loaded - shape: (1280, 720, 3)
+2025-12-08 22:05:31,814 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:05:31,883 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:05:32,013 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:05:32,013 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:05:32,117 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:05:32,149 - predictimg - INFO - Probabilities per face: [0.08945972]
+2025-12-08 22:05:32,149 - predictimg - INFO - Final result - average probability: 0.0895, label: real
+2025-12-08 22:05:41,826 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpo26kij4y/temp_image_WhatsApp Image 2025-12-08 at 22.05.17.jpeg
+2025-12-08 22:05:41,827 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:05:41,848 - predictimg - INFO - Image loaded - shape: (1280, 720, 3)
+2025-12-08 22:05:41,849 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:05:41,917 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:05:42,008 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:05:42,008 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:05:42,105 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:05:42,130 - predictimg - INFO - Probabilities per face: [0.13239065]
+2025-12-08 22:05:42,130 - predictimg - INFO - Final result - average probability: 0.1324, label: real
+2025-12-08 22:05:43,022 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp2u9xnjug/temp_image_WhatsApp Image 2025-12-08 at 22.05.17.jpeg
+2025-12-08 22:05:43,023 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:05:43,033 - predictimg - INFO - Image loaded - shape: (1280, 720, 3)
+2025-12-08 22:05:43,033 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:05:43,088 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:05:43,177 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:05:43,177 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:05:43,272 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:05:43,296 - predictimg - INFO - Probabilities per face: [0.16877156]
+2025-12-08 22:05:43,296 - predictimg - INFO - Final result - average probability: 0.1688, label: real
+2025-12-08 22:05:43,965 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpuwaap6i1/temp_image_WhatsApp Image 2025-12-08 at 22.05.17.jpeg
+2025-12-08 22:05:43,966 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:05:43,980 - predictimg - INFO - Image loaded - shape: (1280, 720, 3)
+2025-12-08 22:05:43,981 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:05:44,047 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:05:44,135 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:05:44,136 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:05:44,231 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:05:44,256 - predictimg - INFO - Probabilities per face: [0.61414474]
+2025-12-08 22:05:44,256 - predictimg - INFO - Final result - average probability: 0.6141, label: fake
+2025-12-08 22:05:45,767 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpctryio38/temp_image_WhatsApp Image 2025-12-08 at 22.05.17.jpeg
+2025-12-08 22:05:45,767 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:05:45,783 - predictimg - INFO - Image loaded - shape: (1280, 720, 3)
+2025-12-08 22:05:45,783 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:05:45,847 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:05:45,935 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:05:45,935 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:05:46,032 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:05:46,056 - predictimg - INFO - Probabilities per face: [0.30574036]
+2025-12-08 22:05:46,056 - predictimg - INFO - Final result - average probability: 0.3057, label: real
+2025-12-08 22:05:48,077 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpzev8re7k/temp_image_WhatsApp Image 2025-12-08 at 22.05.17.jpeg
+2025-12-08 22:05:48,077 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:05:48,089 - predictimg - INFO - Image loaded - shape: (1280, 720, 3)
+2025-12-08 22:05:48,089 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:05:48,159 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:05:48,247 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:05:48,247 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:05:48,341 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:05:48,365 - predictimg - INFO - Probabilities per face: [0.4223882]
+2025-12-08 22:05:48,365 - predictimg - INFO - Final result - average probability: 0.4224, label: real
+2025-12-08 22:05:49,100 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp7em_4tyx/temp_image_WhatsApp Image 2025-12-08 at 22.05.17.jpeg
+2025-12-08 22:05:49,100 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:05:49,114 - predictimg - INFO - Image loaded - shape: (1280, 720, 3)
+2025-12-08 22:05:49,114 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:05:49,180 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:05:49,268 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:05:49,268 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:05:49,363 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:05:49,387 - predictimg - INFO - Probabilities per face: [0.19694197]
+2025-12-08 22:05:49,388 - predictimg - INFO - Final result - average probability: 0.1969, label: real
+2025-12-08 22:05:50,065 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpo8ptgfuv/temp_image_WhatsApp Image 2025-12-08 at 22.05.17.jpeg
+2025-12-08 22:05:50,065 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:05:50,079 - predictimg - INFO - Image loaded - shape: (1280, 720, 3)
+2025-12-08 22:05:50,079 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:05:50,148 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:05:50,235 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:05:50,235 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:05:50,330 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:05:50,354 - predictimg - INFO - Probabilities per face: [0.20586324]
+2025-12-08 22:05:50,354 - predictimg - INFO - Final result - average probability: 0.2059, label: real
+2025-12-08 22:05:50,999 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp9zag0yum/temp_image_WhatsApp Image 2025-12-08 at 22.05.17.jpeg
+2025-12-08 22:05:50,999 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:05:51,012 - predictimg - INFO - Image loaded - shape: (1280, 720, 3)
+2025-12-08 22:05:51,012 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:05:51,079 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:05:51,167 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:05:51,167 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:05:51,262 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:05:51,285 - predictimg - INFO - Probabilities per face: [0.11070007]
+2025-12-08 22:05:51,285 - predictimg - INFO - Final result - average probability: 0.1107, label: real
+2025-12-08 22:05:52,693 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpy2xh08uj/temp_image_WhatsApp Image 2025-12-08 at 22.05.17.jpeg
+2025-12-08 22:05:52,693 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:05:52,706 - predictimg - INFO - Image loaded - shape: (1280, 720, 3)
+2025-12-08 22:05:52,706 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:05:52,775 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:05:52,866 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:05:52,866 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:05:52,961 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:05:52,985 - predictimg - INFO - Probabilities per face: [0.10653141]
+2025-12-08 22:05:52,985 - predictimg - INFO - Final result - average probability: 0.1065, label: real
+2025-12-08 22:05:53,515 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpsrl_foxi/temp_image_WhatsApp Image 2025-12-08 at 22.05.17.jpeg
+2025-12-08 22:05:53,516 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:05:53,529 - predictimg - INFO - Image loaded - shape: (1280, 720, 3)
+2025-12-08 22:05:53,529 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:05:53,596 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:05:53,684 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:05:53,684 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:05:53,782 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:05:53,807 - predictimg - INFO - Probabilities per face: [0.08615211]
+2025-12-08 22:05:53,807 - predictimg - INFO - Final result - average probability: 0.0862, label: real
+2025-12-08 22:05:54,366 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpcln1j7q1/temp_image_WhatsApp Image 2025-12-08 at 22.05.17.jpeg
+2025-12-08 22:05:54,366 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:05:54,379 - predictimg - INFO - Image loaded - shape: (1280, 720, 3)
+2025-12-08 22:05:54,379 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:05:54,447 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:05:54,534 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:05:54,534 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:05:54,629 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:05:54,653 - predictimg - INFO - Probabilities per face: [0.17287242]
+2025-12-08 22:05:54,653 - predictimg - INFO - Final result - average probability: 0.1729, label: real
+2025-12-08 22:05:55,153 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp_s01jpyq/temp_image_WhatsApp Image 2025-12-08 at 22.05.17.jpeg
+2025-12-08 22:05:55,153 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:05:55,166 - predictimg - INFO - Image loaded - shape: (1280, 720, 3)
+2025-12-08 22:05:55,166 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:05:55,232 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:05:55,319 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:05:55,319 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:05:55,415 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:05:55,439 - predictimg - INFO - Probabilities per face: [0.14799795]
+2025-12-08 22:05:55,440 - predictimg - INFO - Final result - average probability: 0.1480, label: real
+2025-12-08 22:09:41,581 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpe2ll41cp/temp_image_WhatsApp Image 2025-12-08 at 22.05.17.jpeg
+2025-12-08 22:09:41,586 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:09:41,614 - predictimg - INFO - Image loaded - shape: (1280, 720, 3)
+2025-12-08 22:09:41,614 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:09:41,678 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:09:41,803 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:09:41,803 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:09:41,901 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:09:41,935 - predictimg - INFO - Probabilities per face: [0.5637938]
+2025-12-08 22:09:41,935 - predictimg - INFO - Final result - average probability: 0.5638, label: fake
+2025-12-08 22:09:46,279 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpg0vw8m_r/temp_image_WhatsApp Image 2025-12-08 at 22.05.17.jpeg
+2025-12-08 22:09:46,279 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:09:46,326 - predictimg - INFO - Image loaded - shape: (1280, 720, 3)
+2025-12-08 22:09:46,326 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:09:46,389 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:09:46,483 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:09:46,484 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:09:46,579 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:09:46,604 - predictimg - INFO - Probabilities per face: [0.21101782]
+2025-12-08 22:09:46,604 - predictimg - INFO - Final result - average probability: 0.2110, label: real
+2025-12-08 22:09:48,198 - predictimg - INFO - Starting image analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpyx5ndc6f/temp_image_WhatsApp Image 2025-12-08 at 22.05.17.jpeg
+2025-12-08 22:09:48,199 - predictimg - INFO - Parameters - max_faces: 5, device: cpu
+2025-12-08 22:09:48,215 - predictimg - INFO - Image loaded - shape: (1280, 720, 3)
+2025-12-08 22:09:48,215 - predictimg - INFO - Detecting faces in image...
+2025-12-08 22:09:48,281 - predictimg - INFO - Found 1 face(s) in image
+2025-12-08 22:09:48,369 - predictimg - INFO - Face processing completed - processed 1 faces
+2025-12-08 22:09:48,370 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:09:48,466 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:09:48,491 - predictimg - INFO - Probabilities per face: [0.06177947]
+2025-12-08 22:09:48,491 - predictimg - INFO - Final result - average probability: 0.0618, label: real
+2025-12-08 22:21:40,525 - predictimg - INFO - Starting video analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp_b2r5gzt/temp_video_Real 2.mp4
+2025-12-08 22:21:40,525 - predictimg - INFO - Parameters - max_faces: 20, seconds_range: 6, device: cpu
+2025-12-08 22:21:40,585 - predictimg - INFO - Video info - FPS: 30, frames: 255, duration: 8.50s
+2025-12-08 22:21:40,585 - predictimg - INFO - Analysis range - frames 75 to 255, step: 4
+2025-12-08 22:21:41,952 - predictimg - INFO - Face extraction completed - collected 3 faces
+2025-12-08 22:21:41,952 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:21:42,259 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:21:42,313 - predictimg - INFO - Probabilities per face: [0.6298433  0.35962206 0.8120008 ]
+2025-12-08 22:21:42,314 - predictimg - INFO - Final result - average probability: 0.6005, label: fake
+2025-12-08 22:21:42,314 - predictimg - INFO - Faces classified as fake: 2/3
+2025-12-08 22:21:48,359 - predictimg - INFO - Starting video analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp5uxhm8hk/temp_video_Real 2.mp4
+2025-12-08 22:21:48,360 - predictimg - INFO - Parameters - max_faces: 20, seconds_range: 6, device: cpu
+2025-12-08 22:21:48,385 - predictimg - INFO - Video info - FPS: 30, frames: 255, duration: 8.50s
+2025-12-08 22:21:48,385 - predictimg - INFO - Analysis range - frames 75 to 255, step: 4
+2025-12-08 22:21:49,691 - predictimg - INFO - Face extraction completed - collected 3 faces
+2025-12-08 22:21:49,691 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:21:50,165 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:21:50,205 - predictimg - INFO - Probabilities per face: [0.5528477  0.31366765 0.65538025]
+2025-12-08 22:21:50,205 - predictimg - INFO - Final result - average probability: 0.5073, label: fake
+2025-12-08 22:21:50,205 - predictimg - INFO - Faces classified as fake: 2/3
+2025-12-08 22:21:51,001 - predictimg - INFO - Starting video analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp1lytd0d1/temp_video_Real 2.mp4
+2025-12-08 22:21:51,001 - predictimg - INFO - Parameters - max_faces: 20, seconds_range: 6, device: cpu
+2025-12-08 22:21:51,022 - predictimg - INFO - Video info - FPS: 30, frames: 255, duration: 8.50s
+2025-12-08 22:21:51,022 - predictimg - INFO - Analysis range - frames 75 to 255, step: 4
+2025-12-08 22:21:52,332 - predictimg - INFO - Face extraction completed - collected 3 faces
+2025-12-08 22:21:52,332 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:21:52,630 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:21:52,669 - predictimg - INFO - Probabilities per face: [0.66643155 0.2566132  0.6960956 ]
+2025-12-08 22:21:52,669 - predictimg - INFO - Final result - average probability: 0.5397, label: fake
+2025-12-08 22:21:52,669 - predictimg - INFO - Faces classified as fake: 2/3
+2025-12-08 22:21:53,418 - predictimg - INFO - Starting video analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpp4r_gtgp/temp_video_Real 2.mp4
+2025-12-08 22:21:53,419 - predictimg - INFO - Parameters - max_faces: 20, seconds_range: 6, device: cpu
+2025-12-08 22:21:53,438 - predictimg - INFO - Video info - FPS: 30, frames: 255, duration: 8.50s
+2025-12-08 22:21:53,438 - predictimg - INFO - Analysis range - frames 75 to 255, step: 4
+2025-12-08 22:21:54,750 - predictimg - INFO - Face extraction completed - collected 3 faces
+2025-12-08 22:21:54,751 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:21:55,045 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:21:55,085 - predictimg - INFO - Probabilities per face: [0.26381797 0.6415954  0.24374682]
+2025-12-08 22:21:55,086 - predictimg - INFO - Final result - average probability: 0.3831, label: real
+2025-12-08 22:21:55,086 - predictimg - INFO - Faces classified as fake: 1/3
+2025-12-08 22:21:55,723 - predictimg - INFO - Starting video analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpxsk7l650/temp_video_Real 2.mp4
+2025-12-08 22:21:55,723 - predictimg - INFO - Parameters - max_faces: 20, seconds_range: 6, device: cpu
+2025-12-08 22:21:55,743 - predictimg - INFO - Video info - FPS: 30, frames: 255, duration: 8.50s
+2025-12-08 22:21:55,744 - predictimg - INFO - Analysis range - frames 75 to 255, step: 4
+2025-12-08 22:21:57,061 - predictimg - INFO - Face extraction completed - collected 3 faces
+2025-12-08 22:21:57,061 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:21:57,362 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:21:57,403 - predictimg - INFO - Probabilities per face: [0.24609345 0.35294712 0.7229982 ]
+2025-12-08 22:21:57,403 - predictimg - INFO - Final result - average probability: 0.4407, label: real
+2025-12-08 22:21:57,403 - predictimg - INFO - Faces classified as fake: 1/3
+2025-12-08 22:21:59,583 - predictimg - INFO - Starting video analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp9wg8jayw/temp_video_Real 2.mp4
+2025-12-08 22:21:59,584 - predictimg - INFO - Parameters - max_faces: 20, seconds_range: 6, device: cpu
+2025-12-08 22:21:59,601 - predictimg - INFO - Video info - FPS: 30, frames: 255, duration: 8.50s
+2025-12-08 22:21:59,601 - predictimg - INFO - Analysis range - frames 75 to 255, step: 4
+2025-12-08 22:22:00,952 - predictimg - INFO - Face extraction completed - collected 3 faces
+2025-12-08 22:22:00,952 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:22:01,255 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:22:01,295 - predictimg - INFO - Probabilities per face: [0.6318791  0.25550622 0.6214295 ]
+2025-12-08 22:22:01,295 - predictimg - INFO - Final result - average probability: 0.5029, label: fake
+2025-12-08 22:22:01,295 - predictimg - INFO - Faces classified as fake: 2/3
+2025-12-08 22:22:02,413 - predictimg - INFO - Starting video analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpxapxg7l9/temp_video_Real 2.mp4
+2025-12-08 22:22:02,413 - predictimg - INFO - Parameters - max_faces: 20, seconds_range: 6, device: cpu
+2025-12-08 22:22:02,428 - predictimg - INFO - Video info - FPS: 30, frames: 255, duration: 8.50s
+2025-12-08 22:22:02,428 - predictimg - INFO - Analysis range - frames 75 to 255, step: 4
+2025-12-08 22:22:03,747 - predictimg - INFO - Face extraction completed - collected 3 faces
+2025-12-08 22:22:03,747 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:22:04,043 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:22:04,083 - predictimg - INFO - Probabilities per face: [0.6979675  0.34698847 0.7069894 ]
+2025-12-08 22:22:04,083 - predictimg - INFO - Final result - average probability: 0.5840, label: fake
+2025-12-08 22:22:04,083 - predictimg - INFO - Faces classified as fake: 2/3
+2025-12-08 22:22:04,863 - predictimg - INFO - Starting video analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpmmse867a/temp_video_Real 2.mp4
+2025-12-08 22:22:04,864 - predictimg - INFO - Parameters - max_faces: 20, seconds_range: 6, device: cpu
+2025-12-08 22:22:04,881 - predictimg - INFO - Video info - FPS: 30, frames: 255, duration: 8.50s
+2025-12-08 22:22:04,882 - predictimg - INFO - Analysis range - frames 75 to 255, step: 4
+2025-12-08 22:22:06,200 - predictimg - INFO - Face extraction completed - collected 3 faces
+2025-12-08 22:22:06,200 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:22:06,501 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:22:06,541 - predictimg - INFO - Probabilities per face: [0.23573229 0.27332628 0.8001802 ]
+2025-12-08 22:22:06,541 - predictimg - INFO - Final result - average probability: 0.4364, label: real
+2025-12-08 22:22:06,541 - predictimg - INFO - Faces classified as fake: 1/3
+2025-12-08 22:22:24,039 - predictimg - INFO - Starting video analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp4yv7i0yp/temp_video_Real 2.mp4
+2025-12-08 22:22:24,039 - predictimg - INFO - Parameters - max_faces: 20, seconds_range: 6, device: cpu
+2025-12-08 22:22:24,058 - predictimg - INFO - Video info - FPS: 30, frames: 255, duration: 8.50s
+2025-12-08 22:22:24,058 - predictimg - INFO - Analysis range - frames 75 to 255, step: 4
+2025-12-08 22:22:25,370 - predictimg - INFO - Face extraction completed - collected 3 faces
+2025-12-08 22:22:25,370 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:22:25,671 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:22:25,710 - predictimg - INFO - Probabilities per face: [0.6968335  0.22990909 0.23584825]
+2025-12-08 22:22:25,710 - predictimg - INFO - Final result - average probability: 0.3875, label: real
+2025-12-08 22:22:25,710 - predictimg - INFO - Faces classified as fake: 1/3
+2025-12-08 22:22:26,543 - predictimg - INFO - Starting video analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp1yi6_387/temp_video_Real 2.mp4
+2025-12-08 22:22:26,543 - predictimg - INFO - Parameters - max_faces: 20, seconds_range: 6, device: cpu
+2025-12-08 22:22:26,555 - predictimg - INFO - Video info - FPS: 30, frames: 255, duration: 8.50s
+2025-12-08 22:22:26,556 - predictimg - INFO - Analysis range - frames 75 to 255, step: 4
+2025-12-08 22:22:27,889 - predictimg - INFO - Face extraction completed - collected 3 faces
+2025-12-08 22:22:27,889 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:22:28,273 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:22:28,312 - predictimg - INFO - Probabilities per face: [0.14922354 0.30682412 0.18916982]
+2025-12-08 22:22:28,312 - predictimg - INFO - Final result - average probability: 0.2151, label: real
+2025-12-08 22:22:28,312 - predictimg - INFO - Faces classified as fake: 0/3
+2025-12-08 22:22:29,451 - predictimg - INFO - Starting video analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp1p9qo1z4/temp_video_Real 2.mp4
+2025-12-08 22:22:29,452 - predictimg - INFO - Parameters - max_faces: 20, seconds_range: 6, device: cpu
+2025-12-08 22:22:29,471 - predictimg - INFO - Video info - FPS: 30, frames: 255, duration: 8.50s
+2025-12-08 22:22:29,471 - predictimg - INFO - Analysis range - frames 75 to 255, step: 4
+2025-12-08 22:22:30,788 - predictimg - INFO - Face extraction completed - collected 3 faces
+2025-12-08 22:22:30,788 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:22:31,086 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:22:31,126 - predictimg - INFO - Probabilities per face: [0.28700095 0.36587667 0.66415995]
+2025-12-08 22:22:31,126 - predictimg - INFO - Final result - average probability: 0.4390, label: real
+2025-12-08 22:22:31,126 - predictimg - INFO - Faces classified as fake: 1/3
+2025-12-08 22:22:32,543 - predictimg - INFO - Starting video analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpl08kad33/temp_video_Real 2.mp4
+2025-12-08 22:22:32,543 - predictimg - INFO - Parameters - max_faces: 20, seconds_range: 6, device: cpu
+2025-12-08 22:22:32,557 - predictimg - INFO - Video info - FPS: 30, frames: 255, duration: 8.50s
+2025-12-08 22:22:32,557 - predictimg - INFO - Analysis range - frames 75 to 255, step: 4
+2025-12-08 22:22:33,894 - predictimg - INFO - Face extraction completed - collected 3 faces
+2025-12-08 22:22:33,894 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:22:34,199 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:22:34,241 - predictimg - INFO - Probabilities per face: [0.3284381 0.3283733 0.8010134]
+2025-12-08 22:22:34,241 - predictimg - INFO - Final result - average probability: 0.4859, label: real
+2025-12-08 22:22:34,241 - predictimg - INFO - Faces classified as fake: 1/3
+2025-12-08 22:22:36,018 - predictimg - INFO - Starting video analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp5hiu2gsh/temp_video_Real 2.mp4
+2025-12-08 22:22:36,018 - predictimg - INFO - Parameters - max_faces: 20, seconds_range: 6, device: cpu
+2025-12-08 22:22:36,037 - predictimg - INFO - Video info - FPS: 30, frames: 255, duration: 8.50s
+2025-12-08 22:22:36,037 - predictimg - INFO - Analysis range - frames 75 to 255, step: 4
+2025-12-08 22:22:37,363 - predictimg - INFO - Face extraction completed - collected 3 faces
+2025-12-08 22:22:37,363 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:22:37,658 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:22:37,698 - predictimg - INFO - Probabilities per face: [0.22180608 0.22935447 0.8126036 ]
+2025-12-08 22:22:37,698 - predictimg - INFO - Final result - average probability: 0.4213, label: real
+2025-12-08 22:22:37,698 - predictimg - INFO - Faces classified as fake: 1/3
+2025-12-08 22:22:38,796 - predictimg - INFO - Starting video analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmpcii4mth4/temp_video_Real 2.mp4
+2025-12-08 22:22:38,797 - predictimg - INFO - Parameters - max_faces: 20, seconds_range: 6, device: cpu
+2025-12-08 22:22:38,815 - predictimg - INFO - Video info - FPS: 30, frames: 255, duration: 8.50s
+2025-12-08 22:22:38,815 - predictimg - INFO - Analysis range - frames 75 to 255, step: 4
+2025-12-08 22:22:40,136 - predictimg - INFO - Face extraction completed - collected 3 faces
+2025-12-08 22:22:40,136 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:22:40,439 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:22:40,478 - predictimg - INFO - Probabilities per face: [0.23840386 0.47802013 0.53337026]
+2025-12-08 22:22:40,479 - predictimg - INFO - Final result - average probability: 0.4166, label: real
+2025-12-08 22:22:40,479 - predictimg - INFO - Faces classified as fake: 1/3
+2025-12-08 22:22:41,501 - predictimg - INFO - Starting video analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp7s5l3yi8/temp_video_Real 2.mp4
+2025-12-08 22:22:41,501 - predictimg - INFO - Parameters - max_faces: 20, seconds_range: 6, device: cpu
+2025-12-08 22:22:41,521 - predictimg - INFO - Video info - FPS: 30, frames: 255, duration: 8.50s
+2025-12-08 22:22:41,522 - predictimg - INFO - Analysis range - frames 75 to 255, step: 4
+2025-12-08 22:22:42,840 - predictimg - INFO - Face extraction completed - collected 3 faces
+2025-12-08 22:22:42,840 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:22:43,137 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:22:43,177 - predictimg - INFO - Probabilities per face: [0.72750247 0.28540975 0.6131159 ]
+2025-12-08 22:22:43,177 - predictimg - INFO - Final result - average probability: 0.5420, label: fake
+2025-12-08 22:22:43,177 - predictimg - INFO - Faces classified as fake: 2/3
+2025-12-08 22:22:45,805 - predictimg - INFO - Starting video analysis for: /var/folders/xc/010r9p7974s908vfy8b8pwy00000gp/T/tmp3454tx_5/temp_video_Real 2.mp4
+2025-12-08 22:22:45,805 - predictimg - INFO - Parameters - max_faces: 20, seconds_range: 6, device: cpu
+2025-12-08 22:22:45,822 - predictimg - INFO - Video info - FPS: 30, frames: 255, duration: 8.50s
+2025-12-08 22:22:45,823 - predictimg - INFO - Analysis range - frames 75 to 255, step: 4
+2025-12-08 22:22:47,137 - predictimg - INFO - Face extraction completed - collected 3 faces
+2025-12-08 22:22:47,137 - predictimg - INFO - Scaling features and preparing quantum circuits...
+2025-12-08 22:22:47,436 - predictimg - INFO - Running quantum model prediction...
+2025-12-08 22:22:47,476 - predictimg - INFO - Probabilities per face: [0.57873344 0.36900526 0.26942688]
+2025-12-08 22:22:47,476 - predictimg - INFO - Final result - average probability: 0.4057, label: real
+2025-12-08 22:22:47,476 - predictimg - INFO - Faces classified as fake: 1/3

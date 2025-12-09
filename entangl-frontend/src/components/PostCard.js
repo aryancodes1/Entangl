@@ -299,7 +299,7 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
           <div className="mt-1">
             {post.content && post.content.trim() && (
               <div>
-                <p className="text-gray-900 dark:text-white text-[15px] leading-5 whitespace-pre-wrap break-words">
+                <p className="text-gray-900 dark:text-white text-[15px] leading-5 whitespace-pre-wrap break-words max-h-96 overflow-y-auto">
                   {post.content}
                 </p>
                 
