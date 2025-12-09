@@ -448,7 +448,7 @@ export default function CreatePost({ onPostCreated }) {
                     onChange={(e) => setContent(e.target.value)}
                     placeholder="What's happening?"
                     rows={3}
-                    className="w-full bg-transparent text-white placeholder-gray-500 resize-none focus:outline-none text-xl leading-6 border-none"
+                    className="w-full bg-transparent text-white placeholder-gray-500 resize-none focus:outline-none text-xl leading-6 border-none max-h-72 overflow-y-auto"
                     maxLength={characterLimit}
                     style={{
                       fontSize: '20px',

@@ -50,6 +50,7 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
     sources: post.factCheckDetails?.sources || []
   } : null);
   const [showFactCheckDetails, setShowFactCheckDetails] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   
   // New fact-checking states
   const [newsFactCheck, setNewsFactCheck] = useState(null);
@@ -299,9 +300,17 @@ export default function PostCard({ post, onLike, onComment, onDelete, currentUse
           <div className="mt-1">
             {post.content && post.content.trim() && (
               <div>
-                <p className="text-gray-900 dark:text-white text-[15px] leading-5 whitespace-pre-wrap break-words max-h-96 overflow-y-auto">
+                <p className={`text-gray-900 dark:text-white text-[15px] leading-5 whitespace-pre-wrap break-words ${isExpanded ? 'max-h-96 overflow-y-auto' : 'line-clamp-6'}`}>
                   {post.content}
                 </p>
+                {post.content.length > 350 && !isExpanded && (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }} 
+                    className="text-blue-500 hover:underline text-sm mt-1"
+                  >
+                    See more
+                  </button>
+                )}
                 
                 {/* Fact-check button for text content */}
                 <div className="mt-2">
