@@ -390,7 +390,7 @@ export default function CreatePost({ onPostCreated }) {
     }
   };
 
-  const characterLimit = 280;
+  const characterLimit = 100000;
   const remainingChars = characterLimit - content.length;
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 

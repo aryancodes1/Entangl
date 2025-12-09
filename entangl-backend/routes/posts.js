@@ -337,14 +337,6 @@ router.post('/', authenticateToken, async (req, res) => {
     });
   }
 
-  // Validate content length if provided
-  if (content && content.length > 280) {
-    return res.status(400).json({ 
-      error: 'Content too long',
-      details: 'Posts must be 280 characters or less'
-    });
-  }
-
   // Validate URLs are from our S3 bucket if provided
   const bucketName = process.env.AWS_S3_BUCKET_NAME;
   if (imageUrl && bucketName && !imageUrl.includes(bucketName)) {
