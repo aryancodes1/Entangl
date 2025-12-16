@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@uploadthing/react": "^7.3.3",
-    "next": "15.5.2",
+    "next": "15.5.7",
     "next-auth": "^4.24.11",
     "nodemailer": "^7.0.10",
     "react": "19.1.0",
